@@ -5,16 +5,28 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2713%27 fill=%27%231b64c4%27 stroke=%27%2322e07a%27 stroke-width=%273%27/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head><body>
-<main class="wrap">
+<div class="stars" aria-hidden="true"></div>
+<main class="wrap home">
   <section class="hero">
-    <div>
+    <div class="hero-text">
+      <span class="eyebrow">🌍 Maps · Quizzes · Languages</span>
       <h1>Discover the <span class="grad">world</span>, one country at a time.</h1>
-      <p class="lead">Spin an interactive globe, read about the history, languages and culture of every nation, then play map, capital and flag games.</p>
-      <div class="cta"><a class="btn" href="explore.html">🌍 Explore the globe</a><a class="btn ghost" href="play.html">🎮 Play now</a></div>
+      <p class="lead">Spin the globe, uncover the stories behind every nation, and test what you know.</p>
+      <div class="cta">
+        <a class="cta-card primary" href="explore.html"><span class="ci">🌍</span><span><b>Explore the globe</b><small>Tap any country to dive in</small></span></a>
+        <a class="cta-card" href="play.html"><span class="ci">🎮</span><span><b>Play now</b><small>Quizzes, practice &amp; sudden death</small></span></a>
+      </div>
     </div>
-    <div class="hero-globe"><canvas id="hero"></canvas></div>
+    <div class="hero-globe">
+      <canvas id="hero"></canvas>
+      <span class="float f1">🏛️ Paris</span>
+      <span class="float f2">📍 Find Japan</span>
+      <span class="float f3">你好</span>
+      <span class="float f4">¡Hola!</span>
+      <span class="float f5">مرحبا</span>
+      <span class="float f6">🏆</span>
+    </div>
   </section>
-
 </main>
 <script src="vendor/d3.min.js"></script><script src="vendor/topojson-client.min.js"></script>
 <script src="data/world.js"></script><script src="data/countries.js"></script>
