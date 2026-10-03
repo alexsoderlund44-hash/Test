@@ -181,3 +181,13 @@ footer.site-footer{border-top:1px solid var(--line);margin-top:60px;padding:26px
   .explore .side{top:auto;left:16px;right:16px;width:auto;max-width:none;max-height:55%;bottom:12px}
   .stage .zoom{flex-direction:row;right:auto;left:16px;bottom:auto;top:76px}
 }
+
+/* language lessons */
+.phr{width:100%;border-collapse:collapse}
+.phr td{padding:12px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.phr tr:last-child td{border-bottom:0}
+.phr .en{color:var(--muted);width:32%}
+.phr .nat{font-size:1.35rem;font-weight:700}
+.phr .rom{color:var(--blue);font-size:.95rem}
+.phr td:last-child{text-align:right;width:48px}
+@media(max-width:600px){.phr .en{width:auto}.phr td{padding:10px 4px}}

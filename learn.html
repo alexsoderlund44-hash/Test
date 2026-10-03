@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Learn – GeoAtlas</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2713%27 fill=%27%231b64c4%27 stroke=%27%2322e07a%27 stroke-width=%273%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head><body>
+<main class="wrap" style="max-width:860px">
+  <p style="margin:22px 0 0"><a id="back" href="languages.html">← All languages</a></p>
+  <div id="view" style="margin-top:14px"></div>
+</main>
+<footer class="site-footer"></footer>
+<script src="data/lang.js"></script><script src="js/common.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+const key = new URLSearchParams(location.search).get('lang');
+const L = LANGS[key];
+const canSpeak = 'speechSynthesis' in window;
+let quiz = null;
+const dirAttr = L && L.rtl ? ' dir="rtl"' : '';
+
+
+function route() {
+  const id = location.hash.slice(1), sec = LANG_SECTIONS.find(x => x.id === id);
+  quiz = null;
+  sec ? lesson(sec) : home();
+  window.scrollTo(0, 0);
+}
+const prog = () => (Geo.load().lang || {})[key] || {};
+
+function speak(text, el) {
+  if (!canSpeak) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text.replace(/^[٠-٩0-9]+\s*·\s*/, ''));
+  u.lang = L.speech; u.rate = .85; speechSynthesis.speak(u);
+}
+const speakBtn = (t) => canSpeak ? `<button class="chip spk" data-say="${esc(t)}" aria-label="Hear it" title="Hear it">🔊</button>` : '';
+function bindSpeak(root) { root.querySelectorAll('.spk').forEach(b => b.onclick = e => { e.stopPropagation(); speak(b.dataset.say); }); }
+
+function home() {
+  $('back').href = 'languages.html'; $('back').textContent = '← All languages';
+  const p = prog(), done = LANG_SECTIONS.filter(x => (p[x.id] || {}).done).length;
+  $('view').innerHTML = `<div style="display:flex;gap:16px;align-items:center"><span style="font-size:3.2rem">${L.flag}</span>
+      <div><h1 style="margin:0">Learn ${L.name}</h1><div class="grad" style="font-size:1.4rem;font-weight:700"${dirAttr}>${L.native}</div></div></div>
+    <div class="card" style="margin:16px 0"><p style="margin:0 0 8px"><b>${L.speakers}</b> · ${L.level}</p><p style="margin:0" class="muted">${esc(L.blurb)}</p></div>
+    <div class="player" style="margin-bottom:6px"><span class="lvl">${done} / ${LANG_SECTIONS.length}</span><div class="progress"><i style="width:${100 * done / LANG_SECTIONS.length}%"></i></div></div>
+    <h2 style="margin:20px 0 12px">Lessons</h2>
+    <div class="bigopts">${LANG_SECTIONS.map(x => { const r = p[x.id] || {}; return `<a class="bigopt ${r.done ? 'on' : ''}" href="#${x.id}" style="text-decoration:none"><span class="bi">${x.icon}</span><b>${x.title}</b><small>${esc(x.intro)}</small><small>${L.data[x.id].length} words${r.best != null ? ` · best ${r.best}%${r.done ? ' ✓' : ''}` : ''}</small></a>`; }).join('')}</div>`;
+}
+
+function lesson(sec) {
+  $('back').href = '#'; $('back').textContent = '← ' + L.name + ' lessons';
+  const items = L.data[sec.id];
+  $('view').innerHTML = `<h1 style="margin:0 0 4px">${sec.icon} ${sec.title}</h1><p class="muted" style="margin:0 0 14px">${esc(sec.intro)} Tap 🔊 to hear it${canSpeak ? '' : ' (audio isn’t supported in this browser)'}.</p>
+    <div class="card" style="padding:6px 16px"><table class="phr">${items.map(([en, nat, rom]) => `<tr><td class="en">${esc(en)}</td><td class="nat"${dirAttr}>${esc(nat)}</td><td class="rom">${esc(rom)}</td><td>${speakBtn(nat)}</td></tr>`).join('')}</table></div>
+    <div class="actions"><button class="btn" id="startQ">Take the quiz →</button><a class="btn ghost" href="#">Back to lessons</a></div>`;
+  bindSpeak($('view')); $('startQ').onclick = () => startQuiz(sec);
+}
+
+/* quiz: 8 questions, both directions, pass at 80% */
+function startQuiz(sec) {
+  const items = L.data[sec.id];
+  const pick = Geo.shuffle(items).slice(0, Math.min(8, items.length));
+  quiz = { sec, i: 0, score: 0, qs: pick.map((it, n) => ({ it, dir: n % 2 })), wrong: [] };
+  question();
+}
+function question() {
+  const q = quiz, cur = q.qs[q.i], items = L.data[q.sec.id];
+  const others = Geo.shuffle(items.filter(x => x !== cur.it)).slice(0, 3);
+  const opts = Geo.shuffle([cur.it, ...others]);
+  const toNative = cur.dir === 0;
+  const label = it => toNative ? `<span${dirAttr}>${esc(it[1])}</span>${L.rtl || L.name.startsWith('Mandarin') ? `<br><small class="muted">${esc(it[2])}</small>` : ''}` : esc(it[0]);
+  $('view').innerHTML = `<div class="hud"><span class="pill">${q.sec.icon} ${q.sec.title}</span><div class="progress"><i style="width:${100 * q.i / q.qs.length}%"></i></div><span class="pill">${q.i + 1} / ${q.qs.length}</span></div>
+    <div class="card qbox"><p class="q">${toNative ? `How do you say <b>“${esc(cur.it[0])}”</b>?` : `What does <b${dirAttr}>${esc(cur.it[1])}</b> mean? ${speakBtn(cur.it[1])}`}</p>
+    <div class="answers">${opts.map((o, n) => `<button class="ans" data-n="${n}">${label(o)}</button>`).join('')}</div><div class="feedback" id="fb" hidden></div>
+    <div class="actions"><button class="btn" id="nx" hidden>Next →</button></div></div>`;
+  bindSpeak($('view'));
+  $('view').querySelectorAll('.ans').forEach(b => b.onclick = () => {
+    const o = opts[+b.dataset.n], ok = o === cur.it;
+    $('view').querySelectorAll('.ans').forEach((x, n) => { x.disabled = true; if (opts[n] === cur.it) x.classList.add('right'); });
+    if (!ok) { b.classList.add('wrong'); q.wrong.push(cur.it); } else q.score++;
+    $('fb').className = 'feedback ' + (ok ? 'ok' : 'no'); $('fb').hidden = false;
+    $('fb').innerHTML = `${ok ? '✅ Correct!' : '❌ Not quite.'} <b>${esc(cur.it[0])}</b> = <span${dirAttr}>${esc(cur.it[1])}</span> <span class="muted">(${esc(cur.it[2])})</span> ${speakBtn(cur.it[1])}`;
+    bindSpeak($('fb')); if (ok) speak(cur.it[1]);
+    $('nx').hidden = false; $('nx').textContent = q.i + 1 >= q.qs.length ? 'See results' : 'Next →'; $('nx').focus();
+  });
+  $('nx') && ($('nx').onclick = () => { q.i++; q.i >= q.qs.length ? finishQuiz() : question(); });
+}
+function finishQuiz() {
+  const q = quiz, pct = Math.round(100 * q.score / q.qs.length), pass = pct >= 80;
+  const s = Geo.load(); s.lang = s.lang || {}; s.lang[key] = s.lang[key] || {};
+  const r = s.lang[key][q.sec.id] || {};
+  s.lang[key][q.sec.id] = { best: Math.max(r.best || 0, pct), done: !!(r.done || pass) };
+  Geo.save(s); Geo.checkAchievements(s);
+  const idx = LANG_SECTIONS.indexOf(q.sec), nxt = LANG_SECTIONS[idx + 1];
+  $('view').innerHTML = `<div class="card result"><h2>${pass ? '🎉 Lesson passed!' : 'Keep practicing!'}</h2><div class="score grad">${pct}%</div>
+    <p>${q.score} / ${q.qs.length} correct${pass ? '' : ' — you need 80% to pass.'}</p>
+    ${q.wrong.length ? `<div class="review"><b>Review:</b><ul>${q.wrong.map(w => `<li>${esc(w[0])} — <span${dirAttr}>${esc(w[1])}</span> <span class="muted">(${esc(w[2])})</span></li>`).join('')}</ul></div>` : ''}
+    <div class="actions" style="justify-content:center"><button class="btn" id="again">Try again</button><a class="btn ghost" href="#${q.sec.id}">Review lesson</a>${pass && nxt ? `<a class="btn ghost" href="#${nxt.id}">Next: ${nxt.title} →</a>` : '<a class="btn ghost" href="#">All lessons</a>'}</div></div>`;
+  $('again').onclick = () => startQuiz(q.sec);
+}
+if (!L) { $('view').innerHTML = '<h1>Language not found</h1><p><a href="languages.html">Pick a language</a></p>'; }
+else { document.title = L.name + ' – GeoAtlas'; route(); window.addEventListener('hashchange', route); }
+</script>
+</body></html>

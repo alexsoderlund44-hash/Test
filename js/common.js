@@ -4,6 +4,7 @@
     ['index.html', 'Home'],
     ['explore.html', 'Explore'],
     ['play.html', 'Play Now'],
+    ['languages.html', 'Languages'],
     ['achievements.html', 'Achievements'],
   ];
   const KEY = 'geoatlas.v1';
@@ -11,7 +12,7 @@
   /* ---------- storage ---------- */
   const blank = () => ({
     visited: [], quizzes: 0, perfect: 0, bestStreak: 0, correct: 0, answered: 0,
-    practiceAnswered: 0, byMode: {}, regionsPerfect: [], mastered: {}, best: {}, ach: {},
+    practiceAnswered: 0, byMode: {}, regionsPerfect: [], mastered: {}, best: {}, ach: {}, lang: {},
   });
   function load() {
     try { return Object.assign(blank(), JSON.parse(localStorage.getItem(KEY)) || {}); }
@@ -38,6 +39,13 @@
     { id: 'world', icon: '🌍', name: 'World Traveler', desc: 'Read about 150 countries.', val: s => s.visited.length, goal: 150 },
     { id: 'regions', icon: '🗺️', name: 'Continental', desc: 'Get a perfect quiz in 3 different regions.', val: s => s.regionsPerfect.length, goal: 3 },
   ];
+  const langDone = s => Object.values(s.lang || {}).reduce((n, l) => n + Object.values(l).filter(x => x.done).length, 0);
+  const langsStarted = s => Object.values(s.lang || {}).filter(l => Object.values(l).some(x => x.done)).length;
+  ACH.push(
+    { id: 'lang1', icon: '🗣️', name: 'Language Learner', desc: 'Pass your first language lesson quiz.', val: langDone, goal: 1 },
+    { id: 'lang8', icon: '📖', name: 'Bookworm', desc: 'Pass 8 language lesson quizzes.', val: langDone, goal: 8 },
+    { id: 'poly', icon: '🌐', name: 'Polyglot', desc: 'Pass a lesson in all four languages.', val: langsStarted, goal: 4 },
+  );
   function checkAchievements(s) {
     const fresh = [];
     for (const a of ACH) {
