@@ -14,9 +14,8 @@
     </div>
     <div class="tip" id="tip" hidden></div>
     <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button></div>
-    <div class="hint">Drag to rotate · scroll or pinch to zoom · click a country</div>
   </div>
-  <aside class="side" id="side"><div class="empty"><div style="font-size:3rem">🌍</div><h2>Pick a country</h2><p>Click anywhere on the globe, or search above, to learn about its history, languages and more.</p></div></aside>
+  <aside class="side" id="side" hidden></aside>
 </div>
 <script src="vendor/d3.min.js"></script><script src="vendor/topojson-client.min.js"></script>
 <script src="data/world.js"></script><script src="data/countries.js"></script><script src="data/stories.js"></script>
@@ -38,17 +37,19 @@ function show(c, focus) {
 function render() {
   const c = current, side = $('side');
   const nb = c.borders.map(b => byCode[b]).filter(Boolean);
-  side.innerHTML = `${Geo.flagHTML(c, 48)}<h2>${esc(c.name)}</h2><div class="official">${esc(c.official)}${c.independent ? '' : ' · territory / dependency'}</div>
+  side.hidden = false;
+  side.innerHTML = `<button class="close" id="close" aria-label="Close">×</button>${Geo.flagHTML(c, 48)}<h2>${esc(c.name)}</h2><div class="official">${esc(c.official)}${c.independent ? '' : ' · territory / dependency'}</div>
+    <a class="btn" style="margin:4px 0 16px" href="country.html?c=${c.code}">Learn more about ${esc(c.name)} →</a>
     <dl class="kv">
       <dt>Capital</dt><dd>${esc(c.capital || '—')}</dd>
       <dt>Region</dt><dd>${esc(c.subregion || c.region)}</dd>
       <dt>Population</dt><dd>${Geo.fmt(c.population)}</dd>
       <dt>Area</dt><dd>${Geo.fmt(c.area)} km²</dd>
       <dt>Currency</dt><dd>${esc(c.currencies.join(', ') || '—')}</dd>
-      <dt>Neighbors</dt><dd>${nb.length ? nb.map(n => `<button class="chip" data-c="${n.code}">${esc(n.name)}</button>`).join('') : (c.landlocked ? '—' : 'None by land')}</dd></dl>
-    <a class="btn" style="margin-top:20px" href="country.html?c=${c.code}">Learn more about ${esc(c.name)} →</a>`;
+      <dt>Neighbors</dt><dd>${nb.length ? nb.map(n => `<button class="chip" data-c="${n.code}">${esc(n.name)}</button>`).join('') : (c.landlocked ? '—' : 'None by land')}</dd></dl>`;
   side.querySelectorAll('[data-c]').forEach(b => b.onclick = () => show(byCode[b.dataset.c]));
   side.scrollTop = 0;
+  $('close').onclick = () => { current = null; side.hidden = true; globe.select(null, false); globe.setSpin(true); };
 }
 
 // search
