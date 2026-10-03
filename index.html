@@ -15,38 +15,11 @@
     <div class="hero-globe"><canvas id="hero"></canvas></div>
   </section>
 
-  <section class="tiles">
-    <a class="card tile" href="explore.html"><div class="ico">🌐</div><h3>Explore</h3><p>Click any country on a 3D globe to read about its history, language, people and more.</p></a>
-    <a class="card tile" href="play.html"><div class="ico">🎯</div><h3>Play Now</h3><p>Pick your game one step at a time: capitals, flags, or finding countries on the map.</p></a>
-    <a class="card tile" href="play.html#practice"><div class="ico">🛠️</div><h3>Practice mode</h3><p>No pressure. Hints, instant facts, and missed countries come back until you know them.</p></a>
-    <a class="card tile" href="achievements.html"><div class="ico">🏆</div><h3>Achievements</h3><p>Unlock badges for streaks, perfect scores, and exploring the planet.</p></a>
-  </section>
-
-  <section class="card">
-    <h3>Your progress</h3>
-    <div class="stats" id="stats"></div>
-  </section>
-
-  <section class="card daily" style="margin-top:18px" id="daily"></section>
 </main>
-<footer class="site-footer"></footer>
 <script src="vendor/d3.min.js"></script><script src="vendor/topojson-client.min.js"></script>
 <script src="data/world.js"></script><script src="data/countries.js"></script>
 <script src="js/common.js"></script><script src="js/globe.js"></script>
 <script>
 GeoGlobe(document.getElementById('hero'), { spin: true, static: true });
-const s = Geo.load();
-const stat = (n, l) => `<div class="stat"><b class="grad">${n}</b><span>${l}</span></div>`;
-document.getElementById('stats').innerHTML =
-  stat(s.visited.length, 'countries explored') + stat(s.quizzes, 'quizzes finished') +
-  stat(s.answered ? Math.round(100 * s.correct / s.answered) + '%' : '–', 'accuracy') +
-  stat(Object.keys(s.ach).length + '/' + Geo.ACH.length, 'achievements');
-// Country of the day (changes daily)
-const list = COUNTRIES.filter(c => c.independent);
-const d = Math.floor(Date.now() / 864e5), c = list[(d * 7919) % list.length];
-document.getElementById('daily').innerHTML =
-  `<div>${Geo.flagHTML(c, 56)}</div><div style="flex:1;min-width:200px"><div class="muted">Country of the day</div><h2 style="margin:0">${c.name}</h2>
-   <div class="muted">Capital: ${c.capital || '–'} · ${c.region} · Pop. ${Geo.fmt(c.population)}</div></div>
-   <a class="btn" href="explore.html?c=${c.code}">Learn more →</a>`;
 </script>
 </body></html>
