@@ -13,75 +13,109 @@
 </main>
 <footer class="site-footer"></footer>
 <script src="data/countries.js"></script><script src="data/stories.js"></script>
+<script src="data/details1.js"></script><script src="data/details2.js"></script><script src="data/details3.js"></script>
 <script src="js/common.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
 const code = new URLSearchParams(location.search).get('c');
 const c = COUNTRIES.find(x => x.code === code);
-const st = c && STORIES[c.code] || {};
-const wikiCache = {};
+const by = {}; COUNTRIES.forEach(x => by[x.code] = x);
+const st = (c && STORIES[c.code]) || {};
+const dt = (c && DETAILS[c.code]) || {};
+const TABS = [['history', '📜 History'], ['language', '🗣️ Language'], ['culture', '🎭 Culture'], ['geography', '🧭 Geography'], ['economy', '💼 Economy']];
+const DEDICATED = { history: 'History of', language: 'Languages of', culture: 'Culture of', geography: 'Geography of', economy: 'Economy of' };
+const SECTION_RE = { history: /^history/i, language: /language/i, culture: /^(culture|arts|music|literature|cuisine|sport|religion)/i, geography: /^(geography|climate|environment|biodiversity)/i, economy: /^economy/i };
+const THE = /^(United States|United Kingdom|Netherlands|Philippines|Bahamas|Gambia|Czechia|Central African Republic|Dominican Republic|Comoros|Maldives|Marshall Islands|Seychelles|Solomon Islands|United Arab Emirates|DR Congo|Republic of the Congo)$/;
+const ranked = (key) => { const l = COUNTRIES.filter(x => x.independent && x[key] != null).sort((a, b) => b[key] - a[key]); return x => l.indexOf(x) + 1; };
+const areaRank = ranked('area'), popRank = ranked('population');
 let tab = 'history';
-const TABS = [['history', '📜 History'], ['language', '🗣️ Language'], ['culture', '🎭 Culture & more'], ['geography', '🧭 Geography']];
+const cache = {};
 
-if (!c) {
-  $('head').innerHTML = '<h1>Country not found</h1>';
-} else {
+if (!c) $('head').innerHTML = '<h1>Country not found</h1>';
+else {
   document.title = c.name + ' – GeoAtlas';
   $('back').href = 'explore.html?c=' + c.code;
   $('head').innerHTML = `${Geo.flagHTML(c, 56)}<div><h1 style="margin:0">${esc(c.name)}</h1><div class="muted">${esc(c.official)} · ${esc(c.subregion || c.region)}</div></div>`;
   $('tabs').innerHTML = TABS.map(([k, n]) => `<button data-t="${k}">${n}</button>`).join('');
   $('tabs').querySelectorAll('button').forEach(b => b.onclick = () => { tab = b.dataset.t; history.replaceState(null, '', '#' + tab); render(); });
-  const h = location.hash.slice(1); if (TABS.some(t => t[0] === h)) tab = h;
+  const h = location.hash.slice(1); if (TABS.some(t => t[0] === h)) tab = h; else if (h === 'overview') tab = 'geography';
   render();
+}
+
+/* facts generated from data, shown for every country */
+function facts(k) {
+  const nb = c.borders.map(b => by[b]).filter(Boolean);
+  const row = (a, b) => `<dt>${a}</dt><dd>${b}</dd>`;
+  if (k === 'language') return `<dl class="kv">${row('Official', c.languages.length ? c.languages.map(l => `<span class="chip">🗣️ ${esc(l)}</span>`).join('') : '—')}${row('Demonym', esc(c.demonym || '—'))}${row('Web domain', esc(c.tld || '—'))}</dl>`;
+  if (k === 'geography') return `<dl class="kv">${row('Capital', esc(c.capital || '—'))}${row('Region', esc(c.subregion || c.region))}${row('Area', Geo.fmt(c.area) + ' km²' + (c.independent ? ` (#${areaRank(c)} in the world)` : ''))}${row('Coordinates', c.latlng ? c.latlng.map(n => n.toFixed(1)).join('°, ') + '°' : '—')}${row('Coastline', c.landlocked ? 'Landlocked' : 'Has a coast')}${row('Neighbors', nb.length ? nb.map(n => `<a class="chip" href="country.html?c=${n.code}#geography">${esc(n.name)}</a>`).join('') : 'None by land')}</dl>`;
+  if (k === 'economy') return `<dl class="kv">${row('Currency', esc(c.currencies.join(', ') || '—'))}${row('Population', Geo.fmt(c.population) + (c.independent && c.population ? ` (#${popRank(c)} in the world)` : ''))}${row('Density', c.population && c.area ? Geo.fmt(Math.round(c.population / c.area)) + ' people per km²' : '—')}</dl>`;
+  return '';
+}
+/* readable paragraphs for countries without a hand-written entry */
+function generated(k) {
+  const nb = c.borders.map(b => by[b]).filter(Boolean).map(n => n.name);
+  const list = a => a.length < 3 ? a.join(' and ') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
+  if (k === 'language') return c.languages.length ? [`${c.name} ${c.languages.length > 1 ? 'has ' + c.languages.length + ' official languages: ' + list(c.languages) : 'has ' + c.languages[0] + ' as its official language'}. People from ${c.name} are known as ${c.demonym || 'its citizens'}.`] : [];
+  if (k === 'geography') return [`${c.name} lies in ${c.subregion || c.region} and covers about ${Geo.fmt(c.area)} square kilometers${c.independent ? `, making it the ${areaRank(c)}${['th','st','nd','rd'][(areaRank(c) % 100 > 10 && areaRank(c) % 100 < 14) || areaRank(c) % 10 > 3 ? 0 : areaRank(c) % 10]} largest country in the world by area` : ''}. ${c.landlocked ? 'It is landlocked, with no sea coast.' : 'It has a coastline.'} ${nb.length ? 'It shares land borders with ' + list(nb) + '.' : 'It has no land borders.'}`];
+  if (k === 'economy') return [`The currency of ${c.name} is the ${c.currencies.join(' and ') || 'not listed'}.${c.population ? ` About ${Geo.fmt(c.population)} people live there, an average of ${Geo.fmt(Math.round(c.population / c.area))} people per square kilometer.` : ''}`];
+  return [];
 }
 
 function render() {
   $('tabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
-  const el = $('body');
-  const link = `<p><a href="https://en.wikipedia.org/wiki/${encodeURIComponent(c.wiki)}" target="_blank" rel="noopener">Read more on Wikipedia ↗</a></p>`;
-  const fill = (titles, curated) => {
-    if (curated) { el.innerHTML = `<p>${esc(curated)}</p>` + link; return; }
-    el.innerHTML = '<p class="muted">Loading…</p>';
-    const t0 = tab;
-    wiki(titles).then(t => { if (tab === t0) el.innerHTML = (t ? `<p>${esc(t)}</p><p class="badge-src">Source: Wikipedia</p>` : '<p class="muted">Couldn’t load a summary (are you offline?).</p>') + link; });
-  };
-  if (tab === 'history') fill(['History of ' + c.name, c.name], st.history);
-  else if (tab === 'culture') {
-    if (st.culture) el.innerHTML = `<p>${esc(st.culture)}</p>` + (st.fact ? `<div class="card" style="margin-top:14px"><b>💡 Did you know?</b><br>${esc(st.fact)}</div>` : '') + link;
-    else fill(['Culture of ' + c.name, c.name]);
-  } else if (tab === 'language') {
-    const n = c.languages.length;
-    el.innerHTML = `<p>${n ? `<b>${esc(c.name)}</b> has ${n} official language${n > 1 ? 's' : ''}:` : 'No official language data available.'}</p>
-      <p>${c.languages.map(l => `<span class="chip">🗣️ ${esc(l)}</span>`).join('')}</p>
-      ${c.demonym ? `<p>People from ${esc(c.name)} are called <b>${esc(c.demonym)}</b>.</p>` : ''}
-      <p class="muted">Many countries also have regional and minority languages not listed here.</p>`;
-  } else {
-    const by = {}; COUNTRIES.forEach(x => by[x.code] = x);
-    const nb = c.borders.map(b => by[b]).filter(Boolean);
-    el.innerHTML = `<dl class="kv">
-      <dt>Capital</dt><dd>${esc(c.capital || '—')}</dd>
-      <dt>Region</dt><dd>${esc(c.subregion || c.region)}</dd>
-      <dt>Area</dt><dd>${Geo.fmt(c.area)} km²</dd>
-      <dt>Population</dt><dd>${Geo.fmt(c.population)}</dd>
-      <dt>Landlocked</dt><dd>${c.landlocked ? 'Yes' : 'No'}</dd>
-      <dt>Currency</dt><dd>${esc(c.currencies.join(', ') || '—')}</dd>
-      <dt>Internet</dt><dd>${esc(c.tld || '—')}</dd>
-      <dt>Neighbors</dt><dd>${nb.length ? nb.map(n => `<a class="chip" href="country.html?c=${n.code}#geography">${esc(n.name)}</a>`).join('') : 'None by land'}</dd></dl>`;
-  }
+  const k = tab, el = $('body');
+  let paras = dt[k] || [];
+  if (!paras.length && (k === 'history' || k === 'culture')) { const t = st[k]; paras = t ? [t] : []; }
+  if (!paras.length) paras = generated(k);
+  const fact = k === 'culture' && st.fact ? `<div class="card" style="margin:14px 0"><b>💡 Did you know?</b><br>${esc(st.fact)}</div>` : '';
+  el.innerHTML = paras.map(p => `<p>${esc(p)}</p>`).join('') + fact + facts(k) +
+    `<div id="deep"></div><p><a href="https://en.wikipedia.org/wiki/${encodeURIComponent(c.wiki)}" target="_blank" rel="noopener">Read the full article on Wikipedia ↗</a></p>`;
+  deep(k);
 }
-async function wiki(titles) {
-  for (const t of titles) {
-    if (!(t in wikiCache)) {
-      try {
-        const r = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(t.replace(/ /g, '_')));
-        const j = r.ok ? await r.json() : null;
-        wikiCache[t] = j && j.type === 'standard' ? j.extract : '';
-      } catch (e) { wikiCache[t] = ''; }
-    }
-    if (wikiCache[t]) return wikiCache[t];
+
+/* extra depth straight from Wikipedia (needs internet) */
+async function deep(k) {
+  const box = $('deep'); box.innerHTML = '<p class="muted">Loading more detail…</p>';
+  const text = await wikiText(k);
+  if (tab !== k) return;
+  if (!text) { box.innerHTML = ''; return; }
+  const blocks = text.replace(/(^|\n)(={2,}[^=\n]+={2,})[ \t]*\n/g, '\n\n$2\n\n').split(/\n{2,}/).map(x => x.trim()).filter(Boolean);
+  let html = '', n = 0, hidden = false;
+  for (const b of blocks) {
+    const h = b.match(/^(={2,})\s*(.+?)\s*\1$/);
+    if (h) { if (/^(see also|references|notes|external links|further reading|sources|bibliography|citations)$/i.test(h[2])) break; html += `<h3 class="${n >= 4 ? 'more' : ''}" style="margin:18px 0 6px">${esc(h[2])}</h3>`; continue; }
+    n++; html += `<p class="${n > 4 ? 'more' : ''}">${esc(b)}</p>`;
+    if (n >= 40) break;
   }
-  return '';
+  hidden = n > 4;
+  box.innerHTML = `<h3 style="margin-top:22px" class="grad">More detail <span class="badge-src">· from Wikipedia</span></h3><div id="deeptext">${html}</div>` + (hidden ? '<button class="btn small ghost" id="more">Show more ▾</button>' : '');
+  box.querySelectorAll('.more').forEach(e => e.style.display = 'none');
+  if (hidden) $('more').onclick = () => { box.querySelectorAll('.more').forEach(e => e.style.display = ''); $('more').remove(); };
+}
+async function fetchExtract(title) {
+  if (title in cache) return cache[title];
+  let out = '';
+  try {
+    const u = 'https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&exsectionformat=wiki&redirects=1&format=json&origin=*&titles=' + encodeURIComponent(title);
+    const j = await (await fetch(u)).json();
+    const p = Object.values(j.query.pages)[0];
+    out = p && !p.missing ? (p.extract || '') : '';
+  } catch (e) { out = ''; }
+  return (cache[title] = out);
+}
+async function wikiText(k) {
+  const nm = THE.test(c.name) ? 'the ' + c.name : c.name;
+  for (const t of [`${DEDICATED[k]} ${nm}`, `${DEDICATED[k]} ${c.name}`]) {
+    const x = await fetchExtract(t);
+    if (x.length > 800) return x.replace(/^[\s\S]*?(?=\n\n|$)/, m => m); // keep the lead too
+  }
+  // fall back to matching section(s) of the main article
+  const main = await fetchExtract(c.name);
+  if (!main) return '';
+  const parts = main.split(/\n(?=={2}[^=])/), re = SECTION_RE[k];
+  const hit = parts.filter(p => re.test(((p.match(/^={2}\s*(.+?)\s*={2}/) || [])[1]) || ''));
+  return hit.join('\n\n');
 }
 </script>
 </body></html>
