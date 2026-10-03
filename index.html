@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GeoAtlas – Explore the World</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2713%27 fill=%27%231b64c4%27 stroke=%27%2322e07a%27 stroke-width=%273%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head><body>
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <h1>Discover the <span class="grad">world</span>, one country at a time.</h1>
+      <p class="lead">Spin an interactive globe, read about the history, languages and culture of every nation, then test yourself with map, capital and flag quizzes.</p>
+      <div class="cta"><a class="btn" href="explore.html">🌍 Explore the globe</a><a class="btn ghost" href="quiz.html">🧠 Take a quiz</a></div>
+    </div>
+    <div class="hero-globe"><canvas id="hero"></canvas></div>
+  </section>
+
+  <section class="tiles">
+    <a class="card tile" href="explore.html"><div class="ico">🌐</div><h3>Explore</h3><p>Click any country on a 3D globe to read about its history, language, people and more.</p></a>
+    <a class="card tile" href="quiz.html"><div class="ico">🎯</div><h3>Quiz</h3><p>Capitals, flags, and finding countries on the map — by region and difficulty.</p></a>
+    <a class="card tile" href="quiz.html#practice"><div class="ico">🛠️</div><h3>Practice mode</h3><p>No pressure. Hints, instant facts, and missed countries come back until you know them.</p></a>
+    <a class="card tile" href="achievements.html"><div class="ico">🏆</div><h3>Achievements</h3><p>Unlock badges for streaks, perfect scores, and exploring the planet.</p></a>
+  </section>
+
+  <section class="card">
+    <h3>Your progress</h3>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <section class="card daily" style="margin-top:18px" id="daily"></section>
+</main>
+<footer class="site-footer"></footer>
+<script src="vendor/d3.min.js"></script><script src="vendor/topojson-client.min.js"></script>
+<script src="data/world.js"></script><script src="data/countries.js"></script>
+<script src="js/common.js"></script><script src="js/globe.js"></script>
+<script>
+GeoGlobe(document.getElementById('hero'), { spin: true, static: true });
+const s = Geo.load();
+const stat = (n, l) => `<div class="stat"><b class="grad">${n}</b><span>${l}</span></div>`;
+document.getElementById('stats').innerHTML =
+  stat(s.visited.length, 'countries explored') + stat(s.quizzes, 'quizzes finished') +
+  stat(s.answered ? Math.round(100 * s.correct / s.answered) + '%' : '–', 'accuracy') +
+  stat(Object.keys(s.ach).length + '/' + Geo.ACH.length, 'achievements');
+// Country of the day (changes daily)
+const list = COUNTRIES.filter(c => c.independent);
+const d = Math.floor(Date.now() / 864e5), c = list[(d * 7919) % list.length];
+document.getElementById('daily').innerHTML =
+  `<div>${Geo.flagHTML(c, 56)}</div><div style="flex:1;min-width:200px"><div class="muted">Country of the day</div><h2 style="margin:0">${c.name}</h2>
+   <div class="muted">Capital: ${c.capital || '–'} · ${c.region} · Pop. ${Geo.fmt(c.population)}</div></div>
+   <a class="btn" href="explore.html?c=${c.code}">Learn more →</a>`;
+</script>
+</body></html>

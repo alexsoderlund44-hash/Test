@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Explore – GeoAtlas</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2713%27 fill=%27%231b64c4%27 stroke=%27%2322e07a%27 stroke-width=%273%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head><body>
+<div class="explore">
+  <div class="stage" id="stage">
+    <canvas id="globe"></canvas>
+    <div class="tools">
+      <input type="search" id="search" placeholder="Search a country…" autocomplete="off">
+      <ul class="results" id="results" hidden></ul>
+    </div>
+    <div class="tip" id="tip" hidden></div>
+    <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button></div>
+    <div class="hint">Drag to rotate · scroll or pinch to zoom · click a country</div>
+  </div>
+  <aside class="side" id="side"><div class="empty"><div style="font-size:3rem">🌍</div><h2>Pick a country</h2><p>Click anywhere on the globe, or search above, to learn about its history, languages and more.</p></div></aside>
+</div>
+<script src="vendor/d3.min.js"></script><script src="vendor/topojson-client.min.js"></script>
+<script src="data/world.js"></script><script src="data/countries.js"></script><script src="data/stories.js"></script>
+<script src="js/common.js"></script><script src="js/globe.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const byCode = {}; COUNTRIES.forEach(c => byCode[c.code] = c);
+const globe = GeoGlobe($('globe'), { spin: true, tip: $('tip'), onSelect: show });
+$('zin').onclick = () => globe.zoomBy(1.4); $('zout').onclick = () => globe.zoomBy(1 / 1.4);
+let current = null, tab = 'overview';
+const wikiCache = {};
+const esc = s => String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+
+function show(c, focus) {
+  current = c; globe.setSpin(false); globe.select(c, focus);
+  const s = Geo.load();
+  if (!s.visited.includes(c.code)) { s.visited.push(c.code); Geo.save(s); Geo.checkAchievements(s); }
+  render();
+}
+function render() {
+  const c = current, side = $('side');
+  const tabs = [['overview', 'Overview'], ['history', 'History'], ['language', 'Language'], ['culture', 'Culture & more']];
+  side.innerHTML = `${Geo.flagHTML(c, 48)}<h2>${esc(c.name)}</h2><div class="official">${esc(c.official)}${c.independent ? '' : ' · territory / dependency'}</div>
+    <div class="tabs">${tabs.map(([k, n]) => `<button data-t="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div><div id="tabbody"></div>`;
+  side.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; render(); });
+  side.scrollTop = 0;
+  body();
+}
+function body() {
+  const c = current, st = (STORIES[c.code] || {}), el = $('tabbody');
+  if (tab === 'overview') {
+    const nb = c.borders.map(b => byCode[b]).filter(Boolean);
+    el.innerHTML = `<dl class="kv">
+      <dt>Capital</dt><dd>${esc(c.capital || '—')}</dd>
+      <dt>Region</dt><dd>${esc(c.subregion || c.region)}</dd>
+      <dt>Population</dt><dd>${Geo.fmt(c.population)}</dd>
+      <dt>Area</dt><dd>${Geo.fmt(c.area)} km²</dd>
+      <dt>Currency</dt><dd>${esc(c.currencies.join(', ') || '—')}</dd>
+      <dt>Demonym</dt><dd>${esc(c.demonym || '—')}</dd>
+      <dt>Internet</dt><dd>${esc(c.tld || '—')}</dd>
+      <dt>Landlocked</dt><dd>${c.landlocked ? 'Yes' : 'No'}</dd>
+      <dt>Neighbors</dt><dd>${nb.length ? nb.map(n => `<button class="chip" data-c="${n.code}">${esc(n.name)}</button>`).join('') : (c.landlocked ? '—' : 'None by land')}</dd></dl>
+      ${st.fact ? `<div class="card" style="margin-top:16px"><b>💡 Did you know?</b><br>${esc(st.fact)}</div>` : ''}`;
+    el.querySelectorAll('[data-c]').forEach(b => b.onclick = () => show(byCode[b.dataset.c]));
+  } else if (tab === 'history') {
+    if (st.history) el.innerHTML = `<p>${esc(st.history)}</p>` + wikiLink(c);
+    else { el.innerHTML = '<p class="muted">Loading history…</p>'; wiki(['History of ' + c.name, c.name]).then(t => { if (current === c && tab === 'history') el.innerHTML = (t ? `<p>${esc(t)}</p><p class="badge-src">Source: Wikipedia</p>` : '<p class="muted">Couldn’t load a summary (are you offline?).</p>') + wikiLink(c); }); }
+  } else if (tab === 'language') {
+    const n = c.languages.length;
+    el.innerHTML = `<p>${n ? `<b>${esc(c.name)}</b> has ${n} official language${n > 1 ? 's' : ''}:` : 'No official language data available.'}</p>
+      <p>${c.languages.map(l => `<span class="chip">🗣️ ${esc(l)}</span>`).join('')}</p>
+      ${c.demonym ? `<p>People from ${esc(c.name)} are called <b>${esc(c.demonym)}</b>.</p>` : ''}
+      <p class="muted">Many countries also have regional and minority languages not listed here.</p>`;
+  } else {
+    if (st.culture) el.innerHTML = `<p>${esc(st.culture)}</p>` + wikiLink(c);
+    else { el.innerHTML = '<p class="muted">Loading…</p>'; wiki([c.name]).then(t => { if (current === c && tab === 'culture') el.innerHTML = (t ? `<p>${esc(t)}</p><p class="badge-src">Source: Wikipedia</p>` : '<p class="muted">Couldn’t load a summary (are you offline?).</p>') + wikiLink(c); }); }
+  }
+}
+const wikiLink = c => `<p><a href="https://en.wikipedia.org/wiki/${encodeURIComponent(c.wiki)}" target="_blank" rel="noopener">Read more on Wikipedia ↗</a></p>`;
+async function wiki(titles) {
+  for (const t of titles) {
+    if (t in wikiCache) { if (wikiCache[t]) return wikiCache[t]; continue; }
+    try {
+      const r = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(t.replace(/ /g, '_')));
+      const j = r.ok ? await r.json() : null;
+      wikiCache[t] = j && j.type === 'standard' ? j.extract : '';
+    } catch (e) { wikiCache[t] = ''; }
+    if (wikiCache[t]) return wikiCache[t];
+  }
+  return '';
+}
+
+// search
+const sorted = COUNTRIES.slice().sort((a, b) => a.name.localeCompare(b.name));
+$('search').addEventListener('input', e => {
+  const q = e.target.value.trim().toLowerCase(), ul = $('results');
+  if (!q) { ul.hidden = true; return; }
+  const m = sorted.filter(c => c.name.toLowerCase().includes(q) || c.capital.toLowerCase().includes(q)).slice(0, 8);
+  ul.innerHTML = m.map(c => `<li data-c="${c.code}">${Geo.flagHTML(c, 18)} ${esc(c.name)}</li>`).join('') || '<li class="muted">No match</li>';
+  ul.hidden = false;
+  ul.querySelectorAll('li[data-c]').forEach(li => li.onclick = () => { show(byCode[li.dataset.c]); ul.hidden = true; $('search').value = ''; });
+});
+$('search').addEventListener('keydown', e => { if (e.key === 'Enter') { const li = document.querySelector('#results li[data-c]'); if (li) li.click(); } });
+const want = new URLSearchParams(location.search).get('c');
+if (want && byCode[want]) show(byCode[want]);
+</script>
+</body></html>
