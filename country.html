@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Country – GeoAtlas</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2713%27 fill=%27%231b64c4%27 stroke=%27%2322e07a%27 stroke-width=%273%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head><body>
+<main class="wrap" style="max-width:820px">
+  <p style="margin:22px 0 0"><a id="back" href="explore.html">← Back to globe</a></p>
+  <div id="head" style="display:flex;gap:18px;align-items:center;margin:14px 0"></div>
+  <div class="tabs" id="tabs"></div>
+  <div class="card" id="body" style="min-height:220px"></div>
+</main>
+<footer class="site-footer"></footer>
+<script src="data/countries.js"></script><script src="data/stories.js"></script>
+<script src="js/common.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+const code = new URLSearchParams(location.search).get('c');
+const c = COUNTRIES.find(x => x.code === code);
+const st = c && STORIES[c.code] || {};
+const wikiCache = {};
+let tab = 'history';
+const TABS = [['history', '📜 History'], ['language', '🗣️ Language'], ['culture', '🎭 Culture & more'], ['geography', '🧭 Geography']];
+
+if (!c) {
+  $('head').innerHTML = '<h1>Country not found</h1>';
+} else {
+  document.title = c.name + ' – GeoAtlas';
+  $('back').href = 'explore.html?c=' + c.code;
+  $('head').innerHTML = `${Geo.flagHTML(c, 56)}<div><h1 style="margin:0">${esc(c.name)}</h1><div class="muted">${esc(c.official)} · ${esc(c.subregion || c.region)}</div></div>`;
+  $('tabs').innerHTML = TABS.map(([k, n]) => `<button data-t="${k}">${n}</button>`).join('');
+  $('tabs').querySelectorAll('button').forEach(b => b.onclick = () => { tab = b.dataset.t; history.replaceState(null, '', '#' + tab); render(); });
+  const h = location.hash.slice(1); if (TABS.some(t => t[0] === h)) tab = h;
+  render();
+}
+
+function render() {
+  $('tabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
+  const el = $('body');
+  const link = `<p><a href="https://en.wikipedia.org/wiki/${encodeURIComponent(c.wiki)}" target="_blank" rel="noopener">Read more on Wikipedia ↗</a></p>`;
+  const fill = (titles, curated) => {
+    if (curated) { el.innerHTML = `<p>${esc(curated)}</p>` + link; return; }
+    el.innerHTML = '<p class="muted">Loading…</p>';
+    const t0 = tab;
+    wiki(titles).then(t => { if (tab === t0) el.innerHTML = (t ? `<p>${esc(t)}</p><p class="badge-src">Source: Wikipedia</p>` : '<p class="muted">Couldn’t load a summary (are you offline?).</p>') + link; });
+  };
+  if (tab === 'history') fill(['History of ' + c.name, c.name], st.history);
+  else if (tab === 'culture') {
+    if (st.culture) el.innerHTML = `<p>${esc(st.culture)}</p>` + (st.fact ? `<div class="card" style="margin-top:14px"><b>💡 Did you know?</b><br>${esc(st.fact)}</div>` : '') + link;
+    else fill(['Culture of ' + c.name, c.name]);
+  } else if (tab === 'language') {
+    const n = c.languages.length;
+    el.innerHTML = `<p>${n ? `<b>${esc(c.name)}</b> has ${n} official language${n > 1 ? 's' : ''}:` : 'No official language data available.'}</p>
+      <p>${c.languages.map(l => `<span class="chip">🗣️ ${esc(l)}</span>`).join('')}</p>
+      ${c.demonym ? `<p>People from ${esc(c.name)} are called <b>${esc(c.demonym)}</b>.</p>` : ''}
+      <p class="muted">Many countries also have regional and minority languages not listed here.</p>`;
+  } else {
+    const by = {}; COUNTRIES.forEach(x => by[x.code] = x);
+    const nb = c.borders.map(b => by[b]).filter(Boolean);
+    el.innerHTML = `<dl class="kv">
+      <dt>Capital</dt><dd>${esc(c.capital || '—')}</dd>
+      <dt>Region</dt><dd>${esc(c.subregion || c.region)}</dd>
+      <dt>Area</dt><dd>${Geo.fmt(c.area)} km²</dd>
+      <dt>Population</dt><dd>${Geo.fmt(c.population)}</dd>
+      <dt>Landlocked</dt><dd>${c.landlocked ? 'Yes' : 'No'}</dd>
+      <dt>Currency</dt><dd>${esc(c.currencies.join(', ') || '—')}</dd>
+      <dt>Internet</dt><dd>${esc(c.tld || '—')}</dd>
+      <dt>Neighbors</dt><dd>${nb.length ? nb.map(n => `<a class="chip" href="country.html?c=${n.code}#geography">${esc(n.name)}</a>`).join('') : 'None by land'}</dd></dl>`;
+  }
+}
+async function wiki(titles) {
+  for (const t of titles) {
+    if (!(t in wikiCache)) {
+      try {
+        const r = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(t.replace(/ /g, '_')));
+        const j = r.ok ? await r.json() : null;
+        wikiCache[t] = j && j.type === 'standard' ? j.extract : '';
+      } catch (e) { wikiCache[t] = ''; }
+    }
+    if (wikiCache[t]) return wikiCache[t];
+  }
+  return '';
+}
+</script>
+</body></html>

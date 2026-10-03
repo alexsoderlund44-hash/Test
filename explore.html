@@ -26,8 +26,7 @@ const $ = id => document.getElementById(id);
 const byCode = {}; COUNTRIES.forEach(c => byCode[c.code] = c);
 const globe = GeoGlobe($('globe'), { spin: true, tip: $('tip'), onSelect: show });
 $('zin').onclick = () => globe.zoomBy(1.4); $('zout').onclick = () => globe.zoomBy(1 / 1.4);
-let current = null, tab = 'overview';
-const wikiCache = {};
+let current = null;
 const esc = s => String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
 
 function show(c, focus) {
@@ -38,55 +37,18 @@ function show(c, focus) {
 }
 function render() {
   const c = current, side = $('side');
-  const tabs = [['overview', 'Overview'], ['history', 'History'], ['language', 'Language'], ['culture', 'Culture & more']];
+  const nb = c.borders.map(b => byCode[b]).filter(Boolean);
   side.innerHTML = `${Geo.flagHTML(c, 48)}<h2>${esc(c.name)}</h2><div class="official">${esc(c.official)}${c.independent ? '' : ' · territory / dependency'}</div>
-    <div class="tabs">${tabs.map(([k, n]) => `<button data-t="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div><div id="tabbody"></div>`;
-  side.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; render(); });
-  side.scrollTop = 0;
-  body();
-}
-function body() {
-  const c = current, st = (STORIES[c.code] || {}), el = $('tabbody');
-  if (tab === 'overview') {
-    const nb = c.borders.map(b => byCode[b]).filter(Boolean);
-    el.innerHTML = `<dl class="kv">
+    <dl class="kv">
       <dt>Capital</dt><dd>${esc(c.capital || '—')}</dd>
       <dt>Region</dt><dd>${esc(c.subregion || c.region)}</dd>
       <dt>Population</dt><dd>${Geo.fmt(c.population)}</dd>
       <dt>Area</dt><dd>${Geo.fmt(c.area)} km²</dd>
       <dt>Currency</dt><dd>${esc(c.currencies.join(', ') || '—')}</dd>
-      <dt>Demonym</dt><dd>${esc(c.demonym || '—')}</dd>
-      <dt>Internet</dt><dd>${esc(c.tld || '—')}</dd>
-      <dt>Landlocked</dt><dd>${c.landlocked ? 'Yes' : 'No'}</dd>
       <dt>Neighbors</dt><dd>${nb.length ? nb.map(n => `<button class="chip" data-c="${n.code}">${esc(n.name)}</button>`).join('') : (c.landlocked ? '—' : 'None by land')}</dd></dl>
-      ${st.fact ? `<div class="card" style="margin-top:16px"><b>💡 Did you know?</b><br>${esc(st.fact)}</div>` : ''}`;
-    el.querySelectorAll('[data-c]').forEach(b => b.onclick = () => show(byCode[b.dataset.c]));
-  } else if (tab === 'history') {
-    if (st.history) el.innerHTML = `<p>${esc(st.history)}</p>` + wikiLink(c);
-    else { el.innerHTML = '<p class="muted">Loading history…</p>'; wiki(['History of ' + c.name, c.name]).then(t => { if (current === c && tab === 'history') el.innerHTML = (t ? `<p>${esc(t)}</p><p class="badge-src">Source: Wikipedia</p>` : '<p class="muted">Couldn’t load a summary (are you offline?).</p>') + wikiLink(c); }); }
-  } else if (tab === 'language') {
-    const n = c.languages.length;
-    el.innerHTML = `<p>${n ? `<b>${esc(c.name)}</b> has ${n} official language${n > 1 ? 's' : ''}:` : 'No official language data available.'}</p>
-      <p>${c.languages.map(l => `<span class="chip">🗣️ ${esc(l)}</span>`).join('')}</p>
-      ${c.demonym ? `<p>People from ${esc(c.name)} are called <b>${esc(c.demonym)}</b>.</p>` : ''}
-      <p class="muted">Many countries also have regional and minority languages not listed here.</p>`;
-  } else {
-    if (st.culture) el.innerHTML = `<p>${esc(st.culture)}</p>` + wikiLink(c);
-    else { el.innerHTML = '<p class="muted">Loading…</p>'; wiki([c.name]).then(t => { if (current === c && tab === 'culture') el.innerHTML = (t ? `<p>${esc(t)}</p><p class="badge-src">Source: Wikipedia</p>` : '<p class="muted">Couldn’t load a summary (are you offline?).</p>') + wikiLink(c); }); }
-  }
-}
-const wikiLink = c => `<p><a href="https://en.wikipedia.org/wiki/${encodeURIComponent(c.wiki)}" target="_blank" rel="noopener">Read more on Wikipedia ↗</a></p>`;
-async function wiki(titles) {
-  for (const t of titles) {
-    if (t in wikiCache) { if (wikiCache[t]) return wikiCache[t]; continue; }
-    try {
-      const r = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(t.replace(/ /g, '_')));
-      const j = r.ok ? await r.json() : null;
-      wikiCache[t] = j && j.type === 'standard' ? j.extract : '';
-    } catch (e) { wikiCache[t] = ''; }
-    if (wikiCache[t]) return wikiCache[t];
-  }
-  return '';
+    <a class="btn" style="margin-top:20px" href="country.html?c=${c.code}">Learn more about ${esc(c.name)} →</a>`;
+  side.querySelectorAll('[data-c]').forEach(b => b.onclick = () => show(byCode[b.dataset.c]));
+  side.scrollTop = 0;
 }
 
 // search

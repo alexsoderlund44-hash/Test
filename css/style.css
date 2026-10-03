@@ -88,7 +88,7 @@ footer.site-footer{border-top:1px solid var(--line);margin-top:60px;padding:26px
 .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:16px 0 14px;overflow:auto}
 .tabs button{background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);font:inherit;font-weight:600;padding:8px 12px;cursor:pointer;white-space:nowrap}
 .tabs button.on{color:var(--green);border-color:var(--green)}
-.kv{display:grid;grid-template-columns:110px 1fr;gap:8px 12px;margin:0}
+.kv{display:grid;grid-template-columns:100px 1fr;gap:8px 12px;margin:0}
 .kv dt{color:var(--muted)}.kv dd{margin:0}
 .side p{margin:0 0 12px}
 .badge-src{font-size:.8rem;color:var(--muted)}
