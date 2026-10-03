@@ -15,23 +15,49 @@
   const DIFFS = { easy: ['Easy', 'most populous 40%', .4], medium: ['Medium', 'top 70%', .7], hard: ['Hard', 'every country', 1] };
   const cfg = { type: location.hash === '#practice' ? 'practice' : 'quiz', mode: 'capital', region: 'World', diff: 'medium', count: 10 };
 
-  /* ---------------- setup screen ---------------- */
-  function opts(key, items, label) {
-    return `<div class="opt-group"><h3>${label}</h3><div class="opts">` + items.map(([v, n, sub]) =>
-      `<button class="opt ${cfg[key] === v ? 'on' : ''}" data-k="${key}" data-v="${v}">${n}${sub ? `<small>${sub}</small>` : ''}</button>`).join('') + '</div></div>';
-  }
+  /* ---------------- setup wizard: one choice per step ---------------- */
+  const STEPS = [
+    { key: 'type', title: 'Choose your game type', items: () => [
+      ['quiz', '🏆', 'Quiz', 'Scored round — earns XP and achievements'],
+      ['practice', '🛠️', 'Practice', 'No score, free hints, mistakes come back']] },
+    { key: 'mode', title: 'Choose your question type', items: () => Object.entries(MODES).map(([k, v]) => {
+      const [ico, ...n] = v[0].split(' '); return [k, ico, n.join(' '), v[1]]; }) },
+    { key: 'region', title: 'Choose your region', items: () => REGIONS.map(r => [r, r === 'World' ? '🌍' : '🗺️', r, r === 'World' ? 'All countries' : '']) },
+    { key: 'diff', title: 'Choose your difficulty', items: () => Object.entries(DIFFS).map(([k, v]) => [k, { easy: '🌱', medium: '⚡', hard: '💀' }[k], v[0], v[1]]) },
+    { key: 'count', title: 'How many questions?', quizOnly: true, items: () => [[10, '🔟', '10', 'Quick round'], [20, '2️⃣0️⃣', '20', 'Standard'], [30, '3️⃣0️⃣', '30', 'Marathon']] },
+  ];
+  const picked = { type: location.hash === '#practice', count: true };
+  let step = location.hash === '#practice' ? 1 : 0;
+  const steps = () => STEPS.filter(s => !(s.quizOnly && cfg.type === 'practice'));
+  const label = (s, v) => { const it = s.items().find(i => String(i[0]) === String(v)); return it ? it[1] + ' ' + it[2] : v; };
+
   function renderSetup() {
-    $('setup').innerHTML =
-      opts('type', [['quiz', '🏆 Quiz', 'Scored, earns achievements'], ['practice', '🛠️ Practice', 'No score, free hints, mistakes come back']], 'Type') +
-      opts('mode', Object.entries(MODES).map(([k, v]) => [k, v[0], v[1]]), 'Question type') +
-      opts('region', REGIONS.map(r => [r, r]), 'Region') +
-      opts('diff', Object.entries(DIFFS).map(([k, v]) => [k, v[0], v[1]]), 'Difficulty') +
-      (cfg.type === 'quiz' ? opts('count', [[10, '10'], [20, '20'], [30, '30']], 'Questions') : '') +
-      '<div><button class="btn" id="start">Start ▶</button></div>';
-    $('setup').querySelectorAll('.opt').forEach(b => b.onclick = () => {
-      const v = b.dataset.v; cfg[b.dataset.k] = isNaN(v) ? v : +v; renderSetup();
+    const list = steps(), n = list.length;
+    const st = Geo.load(), xp = st.correct * 10 + st.quizzes * 50, lvl = Math.floor(Math.sqrt(xp / 50)) + 1;
+    const lo = 50 * (lvl - 1) ** 2, hi = 50 * lvl ** 2;
+    let html = `<div class="player"><span class="lvl">LVL ${lvl}</span><div class="progress"><i style="width:${100 * (xp - lo) / (hi - lo)}%"></i></div><span class="muted">${xp} / ${hi} XP</span></div>`;
+    html += `<div class="crumbs">` + list.map((s, i) => `<button class="crumb ${i === step ? 'cur' : ''}" data-i="${i}" ${i > step && !picked[s.key] ? 'disabled' : ''}>${picked[s.key] || i < step ? label(s, cfg[s.key]) : (i + 1)}</button>`).join('') + `<button class="crumb ${step >= n ? 'cur' : ''}" disabled>🚀</button></div>`;
+    if (step < n) {
+      const s = list[step];
+      html += `<h2 class="step-title">Step ${step + 1} of ${n}: ${s.title}</h2><div class="bigopts">` +
+        s.items().map(([v, ico, name, sub]) => `<button class="bigopt ${picked[s.key] && String(cfg[s.key]) === String(v) ? 'on' : ''}" data-v="${v}"><span class="bi">${ico}</span><b>${name}</b><small>${sub}</small></button>`).join('') + '</div>';
+      if (step > 0) html += '<div><button class="btn ghost small" id="back">← Back</button></div>';
+    } else {
+      const total = cfg.type === 'practice' ? 'Endless' : cfg.count + ' questions';
+      html += `<h2 class="step-title">Ready to play?</h2><div class="card summary">` +
+        list.map(s => `<div><span class="muted">${s.title.replace(/^(Choose your |How many )/, '').replace('?', '')}</span><b>${label(s, cfg[s.key])}</b></div>`).join('') +
+        `</div><div class="actions"><button class="btn big" id="start">🎮 Start game</button><button class="btn ghost" id="back">← Back</button></div>`;
+    }
+    $('setup').innerHTML = html;
+    $('setup').querySelectorAll('.bigopt').forEach(b => b.onclick = () => {
+      const s = list[step], v = b.dataset.v;
+      cfg[s.key] = isNaN(v) ? v : +v; picked[s.key] = true;
+      if (s.key === 'type' && v === 'practice' && step + 1 >= steps().length) step = steps().length; else step++;
+      renderSetup();
     });
-    $('start').onclick = start;
+    $('setup').querySelectorAll('.crumb').forEach(b => b.onclick = () => { step = +b.dataset.i; renderSetup(); });
+    if ($('back')) $('back').onclick = () => { step = Math.max(0, step - 1); renderSetup(); };
+    if ($('start')) $('start').onclick = start;
   }
 
   /* ---------------- map ---------------- */
@@ -101,7 +127,7 @@
       total: practice ? Infinity : Math.min(cfg.count, pool.length),
     };
     $('setup').hidden = true; $('result').hidden = true; $('game').hidden = false;
-    $('h-mode').textContent = (practice ? 'Practice · ' : 'Quiz · ') + MODES[cfg.mode][0] + ' · ' + cfg.region;
+    $('h-mode').textContent = (practice ? 'Practice · ' : 'Game · ') + MODES[cfg.mode][0] + ' · ' + cfg.region;
     $('h-mode').className = 'pill' + (practice ? ' practice' : '');
     $('h-score').hidden = practice; $('h-prog').hidden = practice;
     $('endBtn').textContent = practice ? 'End session' : 'Quit';
@@ -227,7 +253,7 @@
   $('endBtn').onclick = () => { if (state) { state.practice ? finish(true) : (confirm('Quit this quiz? Your score will not be saved.') && backToSetup()); } };
   document.addEventListener('keydown', e => { if (e.key === 'Enter' && state && state.answered && !$('game').hidden) next(); });
 
-  function backToSetup() { state = null; $('game').hidden = true; $('result').hidden = true; $('setup').hidden = false; renderSetup(); }
+  function backToSetup() { state = null; step = 0; $('game').hidden = true; $('result').hidden = true; $('setup').hidden = false; renderSetup(); }
 
   function finish(early) {
     const s = state, st = Geo.load(); $('game').hidden = true; const r = $('result'); r.hidden = false;
@@ -247,7 +273,7 @@
       ${s.practice ? '' : `<div class="score grad">${s.score}</div><div class="muted">points ${extra}</div>`}
       <p><b>${s.correct}</b> / ${n} correct (${acc}%) · best streak <b>${s.best}</b></p>
       ${uniq.length ? `<div class="review"><b>Review these:</b><ul>${uniq.map(c => `<li>${Geo.flagHTML(c, 16)} <a href="explore.html?c=${c.code}">${esc(c.name)}</a> — ${esc(c.capital || '')}</li>`).join('')}</ul></div>` : ''}
-      <div class="actions" style="justify-content:center"><button class="btn" id="again">Play again</button><button class="btn ghost" id="change">Change settings</button><a class="btn ghost" href="achievements.html">🏆 Achievements</a></div>`;
+      <div class="actions" style="justify-content:center"><button class="btn" id="again">Play again</button><button class="btn ghost" id="change">New game</button><a class="btn ghost" href="achievements.html">🏆 Achievements</a></div>`;
     $('again').onclick = start; $('change').onclick = backToSetup;
   }
 

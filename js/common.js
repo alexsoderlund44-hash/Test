@@ -3,7 +3,7 @@
   const PAGES = [
     ['index.html', 'Home'],
     ['explore.html', 'Explore'],
-    ['quiz.html', 'Quiz'],
+    ['play.html', 'Play Now'],
     ['achievements.html', 'Achievements'],
   ];
   const KEY = 'geoatlas.v1';
