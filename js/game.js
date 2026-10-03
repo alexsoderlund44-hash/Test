@@ -6,7 +6,7 @@
     mode: MODES[q.get('mode')] ? q.get('mode') : 'capital',
     region: REGIONS.includes(q.get('region')) ? q.get('region') : 'World',
     diff: DIFFS[q.get('diff')] ? q.get('diff') : 'beginner',
-    count: [10, 20, 30].includes(+q.get('count')) ? +q.get('count') : 10,
+    count: 10,
   };
   /* ---------------- map ---------------- */
   const W = 960, H = 500;

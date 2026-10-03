@@ -11,7 +11,6 @@
       const [ico, ...n] = v[0].split(' '); return [k, ico, n.join(' '), v[1]]; }) },
     { key: 'region', title: 'Choose your region', items: () => REGIONS.map(r => [r, r === 'World' ? '🌍' : '🗺️', r, r === 'World' ? 'All countries' : '']) },
     { key: 'diff', title: 'Choose your difficulty', items: () => Object.entries(DIFFS).map(([k, v]) => [k, v.icon, v.label, v.sub]) },
-    { key: 'count', title: 'How many questions?', quizOnly: true, items: () => [[10, '🔟', '10', 'Quick round'], [20, '2️⃣0️⃣', '20', 'Standard'], [30, '3️⃣0️⃣', '30', 'Marathon']] },
   ];
   const picked = { type: location.hash === '#practice', count: true };
   let step = location.hash === '#practice' ? 1 : 0;
@@ -31,7 +30,7 @@
       if (step > 0) html += '<div><button class="btn ghost small" id="back">← Back</button></div>';
     } else {
       const total = cfg.type === 'practice' ? 'Endless' : cfg.count + ' questions';
-      html += `<h2 class="step-title">Ready to play?</h2><div class="card summary">` +
+      html += `<h2 class="step-title">Ready to play?${cfg.type === 'practice' ? '' : ' 10 questions per round'}</h2><div class="card summary">` +
         list.map(s => `<div><span class="muted">${s.title.replace(/^(Choose your |How many )/, '').replace('?', '')}</span><b>${label(s, cfg[s.key])}</b></div>`).join('') +
         `</div><div class="actions"><button class="btn big" id="start">🎮 Start game</button><button class="btn ghost" id="back">← Back</button></div>`;
     }
