@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Game – GeoAtlas</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2713%27 fill=%27%231b64c4%27 stroke=%27%2322e07a%27 stroke-width=%273%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head><body>
+<main class="wrap">
+
+  <section id="game">
+    <div class="hud">
+      <span class="pill" id="h-mode"></span>
+      <div class="progress" id="h-prog"><i style="width:0"></i></div>
+      <span class="pill" id="h-count"></span>
+      <span class="pill" id="h-score"></span>
+      <span class="pill" id="h-streak">🔥 0</span>
+      <span class="pill" id="h-lives" hidden>💀 Sudden death</span>
+    </div>
+    <div class="card qbox">
+      <p class="q" id="q"></p>
+      <div class="answers" id="answers"></div>
+      <div class="mapbox" id="mapbox" hidden>
+        <svg id="map" viewBox="0 0 960 500" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zreset" aria-label="Reset" title="Reset view">⟲</button></div>
+      </div>
+      <div class="feedback" id="fb" hidden></div>
+      <div class="actions">
+        <button class="btn ghost small" id="hintBtn">💡 Hint</button>
+        <button class="btn" id="nextBtn" hidden>Next →</button>
+        <button class="btn ghost small" id="endBtn" style="margin-left:auto">End session</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="result" class="card result" hidden></section>
+</main>
+<footer class="site-footer"></footer>
+<script src="vendor/d3.min.js"></script><script src="vendor/topojson-client.min.js"></script>
+<script src="data/world.js"></script><script src="data/countries.js"></script><script src="data/stories.js"></script>
+<script src="js/common.js"></script><script src="js/config.js"></script><script src="js/game.js"></script>
+</body></html>

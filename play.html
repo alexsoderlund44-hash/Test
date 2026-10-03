@@ -10,34 +10,8 @@
 
   <section id="setup" class="card setup"></section>
 
-  <section id="game" hidden>
-    <div class="hud">
-      <span class="pill" id="h-mode"></span>
-      <div class="progress" id="h-prog"><i style="width:0"></i></div>
-      <span class="pill" id="h-count"></span>
-      <span class="pill" id="h-score"></span>
-      <span class="pill" id="h-streak">🔥 0</span>
-    </div>
-    <div class="card qbox">
-      <p class="q" id="q"></p>
-      <div class="answers" id="answers"></div>
-      <div class="mapbox" id="mapbox" hidden>
-        <svg id="map" viewBox="0 0 960 500" preserveAspectRatio="xMidYMid meet"></svg>
-        <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zreset" aria-label="Reset" title="Reset view">⟲</button></div>
-      </div>
-      <div class="feedback" id="fb" hidden></div>
-      <div class="actions">
-        <button class="btn ghost small" id="hintBtn">💡 Hint</button>
-        <button class="btn" id="nextBtn" hidden>Next →</button>
-        <button class="btn ghost small" id="endBtn" style="margin-left:auto">End session</button>
-      </div>
-    </div>
-  </section>
-
-  <section id="result" class="card result" hidden></section>
 </main>
 <footer class="site-footer"></footer>
-<script src="vendor/d3.min.js"></script><script src="vendor/topojson-client.min.js"></script>
-<script src="data/world.js"></script><script src="data/countries.js"></script><script src="data/stories.js"></script>
-<script src="js/common.js"></script><script src="js/play.js"></script>
+<script src="data/countries.js"></script><script src="data/stories.js"></script>
+<script src="js/common.js"></script><script src="js/config.js"></script><script src="js/play.js"></script>
 </body></html>

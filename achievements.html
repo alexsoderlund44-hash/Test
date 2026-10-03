@@ -25,7 +25,7 @@ document.getElementById('grid').innerHTML = Geo.ACH.map(a => {
     ${has ? '' : `<div class="bar"><i style="width:${100 * v / a.goal}%"></i></div><p>${v} / ${a.goal}</p>`}</div></div>`;
 }).join('');
 const names = { capital: 'Capitals', flag: 'Flags', find: 'Find on map', identify: 'Identify on map' };
-const rows = Object.entries(s.best).map(([k, v]) => { const [m, r] = k.split('|'); return `<tr><td>${names[m] || m}</td><td>${r}</td><td><b>${v}</b></td></tr>`; });
+const rows = Object.entries(s.best).map(([k, v]) => { const [m, r, d] = k.split('|'); return `<tr><td>${names[m] || m}</td><td>${r}${d ? ' · ' + d : ''}</td><td><b>${v}</b></td></tr>`; });
 document.getElementById('best').innerHTML = rows.length ? `<table style="width:100%;text-align:left"><tr class="muted"><th>Mode</th><th>Region</th><th>Best score</th></tr>${rows.join('')}</table>` : '<span class="muted">Finish a scored quiz to set a best score.</span>';
 document.getElementById('reset').onclick = () => { if (confirm('Erase all saved progress?')) { localStorage.removeItem('geoatlas.v1'); location.reload(); } };
 </script>
