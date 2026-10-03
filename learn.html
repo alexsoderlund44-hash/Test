@@ -34,6 +34,7 @@ function speak(text, el) {
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text.replace(/^[٠-٩0-9]+\s*·\s*/, ''));
   u.lang = L.speech; u.rate = .85; speechSynthesis.speak(u);
+  Geo.update(s => { s.audio++; });
 }
 const speakBtn = (t) => canSpeak ? `<button class="chip spk" data-say="${esc(t)}" aria-label="Hear it" title="Hear it">🔊</button>` : '';
 function bindSpeak(root) { root.querySelectorAll('.spk').forEach(b => b.onclick = e => { e.stopPropagation(); speak(b.dataset.say); }); }
@@ -79,7 +80,7 @@ function question() {
   $('view').querySelectorAll('.ans').forEach(b => b.onclick = () => {
     const o = opts[+b.dataset.n], ok = o === cur.it;
     $('view').querySelectorAll('.ans').forEach((x, n) => { x.disabled = true; if (opts[n] === cur.it) x.classList.add('right'); });
-    if (!ok) { b.classList.add('wrong'); q.wrong.push(cur.it); } else q.score++;
+    if (!ok) { b.classList.add('wrong'); q.wrong.push(cur.it); } else { q.score++; Geo.update(s => { s.langCorrect++; }); }
     $('fb').className = 'feedback ' + (ok ? 'ok' : 'no'); $('fb').hidden = false;
     $('fb').innerHTML = `${ok ? '✅ Correct!' : '❌ Not quite.'} <b>${esc(cur.it[0])}</b> = <span${dirAttr}>${esc(cur.it[1])}</span> <span class="muted">(${esc(cur.it[2])})</span> ${speakBtn(cur.it[1])}`;
     bindSpeak($('fb')); if (ok) speak(cur.it[1]);
@@ -92,6 +93,7 @@ function finishQuiz() {
   const s = Geo.load(); s.lang = s.lang || {}; s.lang[key] = s.lang[key] || {};
   const r = s.lang[key][q.sec.id] || {};
   s.lang[key][q.sec.id] = { best: Math.max(r.best || 0, pct), done: !!(r.done || pass) };
+  if (pct === 100) s.lessonPerfect = (s.lessonPerfect || 0) + 1;
   Geo.save(s); Geo.checkAchievements(s);
   const idx = LANG_SECTIONS.indexOf(q.sec), nxt = LANG_SECTIONS[idx + 1];
   $('view').innerHTML = `<div class="card result"><h2>${pass ? '🎉 Lesson passed!' : 'Keep practicing!'}</h2><div class="score grad">${pct}%</div>

@@ -30,8 +30,13 @@ const esc = s => String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;',
 
 function show(c, focus) {
   current = c; globe.setSpin(false); globe.select(c, focus);
-  const s = Geo.load();
-  if (!s.visited.includes(c.code)) { s.visited.push(c.code); Geo.save(s); Geo.checkAchievements(s); }
+  Geo.update(s => {
+    if (s.visited.includes(c.code)) return;
+    s.visited.push(c.code);
+    s.regionVisits[c.region] = (s.regionVisits[c.region] || 0) + 1;
+    if (c.landlocked) s.landlockedVisits++;
+    if (c.area < 1000) s.tinyVisits++;
+  });
   render();
 }
 function render() {
@@ -47,7 +52,7 @@ function render() {
       <dt>Area</dt><dd>${Geo.fmt(c.area)} km²</dd>
       <dt>Currency</dt><dd>${esc(c.currencies.join(', ') || '—')}</dd>
       <dt>Neighbors</dt><dd>${nb.length ? nb.map(n => `<button class="chip" data-c="${n.code}">${esc(n.name)}</button>`).join('') : (c.landlocked ? '—' : 'None by land')}</dd></dl>`;
-  side.querySelectorAll('[data-c]').forEach(b => b.onclick = () => show(byCode[b.dataset.c]));
+  side.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { Geo.update(s => { s.hops++; }); show(byCode[b.dataset.c]); });
   side.scrollTop = 0;
   $('close').onclick = () => { current = null; side.hidden = true; globe.select(null, false); globe.setSpin(true); };
 }
