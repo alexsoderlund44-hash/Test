@@ -1,15 +1,23 @@
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Traverse Daily – The Daily Travel Strategy Game</title>
+<title>Traverse Daily – The daily travel strategy game</title>
 <meta name="description" content="Traverse Daily: one start city, one destination, every day. Plan the cheapest, fastest route across the world using real flight prices and beat players worldwide.">
 <meta property="og:title" content="Traverse Daily – The Daily Travel Strategy Game"><meta property="og:description" content="Same start, same destination, for everyone on Earth today. Plan the smartest journey and beat the world."><meta property="og:type" content="website">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2713%27 fill=%27%231b64c4%27 stroke=%27%2322e07a%27 stroke-width=%273%27/%3E%3C/svg%3E">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0A1A2B">
+<link rel="canonical" href="https://traversedaily.com/">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/traverse.css">
 </head><body class="tv-body">
+<header class="td-head">
+  <a class="td-brand" href="./" aria-label="Traverse Daily home">
+    <svg class="td-mark" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 26 C 14 10, 26 10, 32 24" fill="none" stroke="#F5B544" stroke-width="2.6" stroke-linecap="round"/><circle cx="8" cy="26" r="3" fill="#39C6B0"/><circle cx="32" cy="24" r="3" fill="#FF6B57"/></svg>
+    <span>Traverse<b>Daily</b></span>
+  </a>
+  <nav class="td-nav"><a href="#how">How it works</a><a href="#tv-board" id="td-nav-score">Today's field</a></nav>
+</header>
 
 <main class="tv">
 
@@ -88,9 +96,17 @@
   <p class="tv-source" id="tv-source"></p>
 </main>
 
-<footer class="site-footer"></footer>
+<section id="how" class="td-how">
+  <div class="td-how-grid">
+    <div><h2>One world, one puzzle a day</h2><p>Every day at 00:00 UTC, everyone gets the same start and destination. There is never a direct flight, so the route is yours to invent.</p></div>
+    <div><h3>Real fares</h3><p>Flight prices and times are averages of real one-way fares for the day's start, hubs and destination, refreshed daily. Trains, buses, ferries and cars are modelled from distance and calibrated to those fares.</p></div>
+    <div><h3>Three dials</h3><p>Money spent, hours on the move, and seconds spent deciding. The score blends all three. Winning on one dial alone won't take you to the top.</p></div>
+    <div><h3>One official run</h3><p>Your first submission of the day is the one that counts. Replay as practice as often as you like.</p></div>
+  </div>
+</section>
+<footer class="td-foot"><span>Traverse Daily</span><span>Map data from Natural Earth via world-atlas. Your runs are saved in this browser.</span></footer>
 <script src="vendor/d3.min.js"></script><script src="vendor/topojson-client.min.js"></script>
-<script src="data/world.js"></script><script src="data/countries.js"></script><script src="data/traverse-cities.js"></script>
+<script src="data/world.js"></script><script src="data/cities.js"></script>
 <script src="data/live/latest.js"></script>
-<script src="js/common.js"></script><script src="js/traverse.js"></script><script src="js/traverse-ui.js"></script>
+<script src="js/traverse.js"></script><script src="js/traverse-ui.js"></script>
 </body></html>

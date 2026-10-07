@@ -4,7 +4,6 @@
     ['index.html', 'Home'],
     ['explore.html', 'Explore'],
     ['play.html', 'Play Now'],
-    ['traverse.html', 'Traverse Daily'],
     ['languages.html', 'Languages'],
     ['achievements.html', 'Achievements'],
   ];
@@ -105,7 +104,7 @@
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   /* ---------- header / side menu / footer ---------- */
-  const ICONS = { 'index.html': '🏠', 'explore.html': '🌍', 'play.html': '🎮', 'traverse.html': '🧭', 'languages.html': '🗣️', 'achievements.html': '🏆' };
+  const ICONS = { 'index.html': '🏠', 'explore.html': '🌍', 'play.html': '🎮', 'languages.html': '🗣️', 'achievements.html': '🏆' };
   function mountChrome() {
     const here = location.pathname.split('/').pop() || 'index.html';
     const header = document.createElement('header');

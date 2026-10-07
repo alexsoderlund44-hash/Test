@@ -7,7 +7,6 @@ A static geography website (black / green / blue theme). No build step needed to
 - **Home** – menu, hero globe, progress stats, country of the day
 - **Explore** – draggable/zoomable globe; click a country (or search) for overview, history, languages and culture. Hand-written history for ~50 countries; others load a live Wikipedia summary.
 - **Play Now** – capitals, flags, find-on-map, identify-on-map, mixed; filter by region and difficulty (Beginner to Impossible sudden death), on its own game page. **Practice mode** has free hints, no score, and repeats mistakes.
-- **Traverse Daily** – daily travel strategy game (`traverse.html`). Everyone gets the same start → destination each UTC day; build a route through ~130 cities choosing flight/train/bus/ferry/car/bike/walk per leg. The Traverse Score weighs money, travel time and decision speed against that day's best possible routes (`js/traverse.js`). One official score per day is locked in `localStorage`; later runs are unscored practice. Flights use a **daily live-fare snapshot** (`data/live/latest.js`, built by `tools/build-live.js` from averaged one-way fares for the day's start/hub/destination network; modelled legs are calibrated to it). The global ranking is simulated client-side (no backend).
 - **Languages** – Spanish, French, Mandarin and Arabic: 8 lesson sections each (greetings, numbers, phrases, colors, family, food, travel, days) with pronunciation, audio and a pass-at-80% quiz.
 - **Achievements** – 16 badges and best scores, saved in `localStorage`.
 

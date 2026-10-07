@@ -32,6 +32,7 @@
   $('#tv-gate-sub').textContent = `${Math.round(T.km(ch.from, ch.to)).toLocaleString()} km as the crow flies, and no direct flight today. Find the smartest way across.`;
   $('#tv-gate-note').textContent = practice ? 'You already have an official score for today. This run is practice.' : 'One official run per day. The decision clock starts when you press the button.';
   $('#tv-legend').innerHTML = Object.entries(T.MODES).filter(([k]) => k !== 'walk' && k !== 'bike').map(([k, m]) => `<span><i style="border-color:${m.color}"></i>${m.icon} ${m.name}</span>`).join('');
+  $('#td-nav-score').style.display = official ? '' : 'none';
   $('#tv-source').textContent = liveToday
     ? `Flight prices and times are averages of real one-way economy fares (${LIVE.source.split(',')[0]}) for departures on ${LIVE.depart}, fetched ${new Date(LIVE.fetched).toUTCString().slice(5, 22)} UTC. Trains, buses, ferries and cars are modelled from distance and calibrated to the day's fares. Rankings are simulated.`
     : 'No live fare snapshot for today, so flights are modelled from distance. Rankings are simulated.';
@@ -240,7 +241,6 @@
       st = T.load(); st.results = st.results || {};
       if (!st.results[ch.key]) { st.results[ch.key] = res; T.save(st); }
       practice = true;
-      try { Geo.update && Geo.update(s => { s.traverse = (s.traverse || 0) + 1; }); } catch (e) {}
       showResult(res, false);
     } else showResult(res, true);
   };
