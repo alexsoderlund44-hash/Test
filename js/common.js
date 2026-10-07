@@ -4,7 +4,7 @@
     ['index.html', 'Home'],
     ['explore.html', 'Explore'],
     ['play.html', 'Play Now'],
-    ['traverse.html', 'Traverse'],
+    ['traverse.html', 'Traverse Daily'],
     ['languages.html', 'Languages'],
     ['achievements.html', 'Achievements'],
   ];

@@ -1,69 +1,96 @@
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Traverse – Daily Travel Strategy – GeoAtlas</title>
+<title>Traverse Daily – The Daily Travel Strategy Game</title>
+<meta name="description" content="Traverse Daily: one start city, one destination, every day. Plan the cheapest, fastest route across the world using real flight prices and beat players worldwide.">
+<meta property="og:title" content="Traverse Daily – The Daily Travel Strategy Game"><meta property="og:description" content="Same start, same destination, for everyone on Earth today. Plan the smartest journey and beat the world."><meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2713%27 fill=%27%231b64c4%27 stroke=%27%2322e07a%27 stroke-width=%273%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/traverse.css">
-</head><body>
-<main class="wrap tv">
+</head><body class="tv-body">
 
-  <section class="tv-top">
-    <div class="tv-title">
-      <span class="eyebrow">🧭 Daily travel strategy</span>
-      <h1><span class="grad">Traverse</span> <small id="tv-day" class="muted"></small></h1>
-      <p class="muted">Same start, same destination, for everyone on Earth today. Find the best journey: cheap, fast, and decided quickly.</p>
-    </div>
-    <div class="tv-challenge card" id="tv-challenge"></div>
-  </section>
+<main class="tv">
 
-  <section id="tv-intro" class="card tv-intro">
-    <h2>How it works</h2>
-    <ol>
-      <li><b>Build a route</b> from the start city to the destination. Add stopovers if they make the trip cheaper or faster.</li>
-      <li><b>Pick a transport</b> for every leg: ✈️ flight, 🚆 train, 🚌 bus, 🚢 ferry, 🚗 car, 🚲 bike, 🚶 walk. Prices and times differ every day.</li>
-      <li><b>Submit once.</b> Your Traverse Score weighs money spent, hours travelled and how fast you decided. The clock starts when you press <i>Start</i>.</li>
-    </ol>
-    <div class="tv-intro-actions">
-      <button class="btn big" id="tv-start">▶ Start today's Traverse</button>
-      <span class="muted" id="tv-intro-note"></span>
-    </div>
-  </section>
+  <!-- ===== Map stage: the hero ===== -->
+  <section class="tv-stage" id="tv-stage">
+    <svg id="tv-svg" viewBox="0 0 960 500" preserveAspectRatio="xMidYMid slice" aria-label="World map"></svg>
 
-  <section id="tv-game" class="tv-game" hidden>
-    <div class="tv-map card">
-      <div class="tv-maphead">
-        <span class="pill" id="tv-timer">⚡ 0s</span>
-        <span class="pill" id="tv-cost">💰 $0</span>
-        <span class="pill" id="tv-time">⏱️ 0h</span>
-        <span class="pill est" id="tv-est">est. —</span>
-      </div>
-      <div class="mapbox tvbox">
-        <svg id="tv-svg" viewBox="0 0 960 500" preserveAspectRatio="xMidYMid meet"></svg>
-        <div class="zoom"><button id="tv-zin" aria-label="Zoom in">+</button><button id="tv-zout" aria-label="Zoom out">−</button><button id="tv-zreset" aria-label="Reset view">⟲</button></div>
-      </div>
-      <p class="muted tiny">Tap a city on the map or search below to add it as the next stop. Drag to pan, scroll to zoom.</p>
+    <!-- challenge card -->
+    <div class="tv-brief" id="tv-brief"></div>
+
+    <!-- map tools -->
+    <div class="tv-maptools">
+      <button id="tv-zin" aria-label="Zoom in">+</button>
+      <button id="tv-zout" aria-label="Zoom out">−</button>
+      <button id="tv-zfit" aria-label="Fit route" title="Fit the route">⤢</button>
     </div>
 
-    <div class="tv-side">
-      <div class="card tv-route">
-        <h3>Your route</h3>
-        <ol id="tv-legs" class="tv-legs"></ol>
-        <div id="tv-picker" class="tv-picker"></div>
-        <div class="tv-actions">
-          <button class="btn ghost small" id="tv-undo">↶ Undo last leg</button>
-          <button class="btn ghost small" id="tv-clear">Clear</button>
-          <button class="btn" id="tv-submit" disabled>Submit journey</button>
-        </div>
+    <!-- legend -->
+    <div class="tv-legend" id="tv-legend"></div>
+
+    <!-- hover tooltip -->
+    <div class="tv-tip" id="tv-tip" hidden></div>
+
+    <!-- city popover: transport picker -->
+    <div class="tv-pop" id="tv-pop" hidden></div>
+
+    <!-- intro overlay -->
+    <div class="tv-gate" id="tv-gate">
+      <div class="tv-gate-card">
+        <p class="tv-gate-kicker">Traverse Daily <span id="tv-gate-day"></span></p>
+        <h1 id="tv-gate-title"></h1>
+        <p class="tv-gate-sub" id="tv-gate-sub"></p>
+        <ul class="tv-gate-rules">
+          <li>Tap cities on the map to plot stops. Pick how you travel each leg.</li>
+          <li>Flights use today's real average fares. Land and sea are modelled.</li>
+          <li>Money, hours and how fast you decide all count. One official run per day.</li>
+        </ul>
+        <button class="tv-cta" id="tv-start">Start the clock</button>
+        <p class="tv-gate-note" id="tv-gate-note"></p>
       </div>
     </div>
   </section>
 
-  <section id="tv-result" class="card tv-result" hidden></section>
-  <section id="tv-board" class="card tv-board" hidden></section>
+  <!-- ===== Planning dashboard ===== -->
+  <aside class="tv-plan" id="tv-plan" hidden>
+    <header class="tv-plan-head">
+      <div>
+        <h2>Your plan</h2>
+        <p class="tv-plan-sub" id="tv-plan-sub">Choose your first stop on the map.</p>
+      </div>
+      <button class="tv-plan-collapse" id="tv-plan-toggle" aria-label="Collapse plan">▾</button>
+    </header>
+
+    <div class="tv-totals">
+      <div class="tv-total"><span class="lab">Spent</span><b id="tv-cost">$0</b><i id="tv-cost-vs"></i></div>
+      <div class="tv-total"><span class="lab">Travel</span><b id="tv-time">0h</b><i id="tv-time-vs"></i></div>
+      <div class="tv-total"><span class="lab">Deciding</span><b id="tv-timer">0s</b><i></i></div>
+    </div>
+
+    <div class="tv-estimate" id="tv-est"><span>Score estimate</span><b>—</b><div class="bar"><i style="width:0"></i></div></div>
+
+    <ol class="tv-stops" id="tv-stops"></ol>
+
+    <div class="tv-split" id="tv-split"></div>
+
+    <footer class="tv-plan-foot">
+      <button class="tv-btn ghost" id="tv-undo">Undo leg</button>
+      <button class="tv-btn ghost" id="tv-clear">Clear</button>
+      <button class="tv-btn primary" id="tv-submit" disabled>Submit journey</button>
+    </footer>
+  </aside>
+
+  <!-- ===== Result ===== -->
+  <section id="tv-result" class="tv-result" hidden></section>
+  <section id="tv-board" class="tv-board" hidden></section>
+  <p class="tv-source" id="tv-source"></p>
 </main>
+
 <footer class="site-footer"></footer>
 <script src="vendor/d3.min.js"></script><script src="vendor/topojson-client.min.js"></script>
 <script src="data/world.js"></script><script src="data/countries.js"></script><script src="data/traverse-cities.js"></script>
+<script src="data/live/latest.js"></script>
 <script src="js/common.js"></script><script src="js/traverse.js"></script><script src="js/traverse-ui.js"></script>
 </body></html>

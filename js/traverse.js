@@ -1,11 +1,14 @@
 /* Traverse — daily travel strategy game. Seeded, deterministic per UTC day. */
 (function () {
   'use strict';
-  const C = window.TRAVERSE_CITIES.map(a => ({ id: a[0], name: a[1], country: a[2], flag: a[3], lat: a[4], lon: a[5], hub: a[6], coastal: a[7], rail: a[8] }));
+  const C = window.TRAVERSE_CITIES.map(a => ({ id: a[0], name: a[1], country: a[2], flag: a[3], lat: a[4], lon: a[5], hub: a[6], coastal: a[7], rail: a[8], iata: a[9] }));
   const byId = {}; C.forEach(c => (byId[c.id] = c));
   const STORE = 'traverse.v1';
   const DAY_MS = 86400000;
   const EPOCH = Date.UTC(2026, 0, 1); // day #1 = 1 Jan 2026 UTC
+
+  const dayNumber = (t = Date.now()) => Math.floor((t - EPOCH) / DAY_MS) + 1;
+  const dayKey = n => new Date(EPOCH + (n - 1) * DAY_MS).toISOString().slice(0, 10);
 
   /* ---------- seeded random ---------- */
   function hash(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
@@ -42,16 +45,44 @@
 
   /* ---------- transport modes ---------- */
   const MODES = {
-    plane: { icon: '✈️', name: 'Flight', speed: 820, over: 1.6, fixed: 55, perKm: 0.075 },
-    train: { icon: '🚆', name: 'Train', speed: 150, over: 0.5, fixed: 12, perKm: 0.09 },
-    bus:   { icon: '🚌', name: 'Bus',   speed: 72,  over: 0.4, fixed: 6,  perKm: 0.045 },
-    ferry: { icon: '🚢', name: 'Ferry', speed: 38,  over: 1.2, fixed: 20, perKm: 0.08 },
-    car:   { icon: '🚗', name: 'Car',   speed: 85,  over: 0.2, fixed: 40, perKm: 0.13 },
-    bike:  { icon: '🚲', name: 'Bicycle', speed: 18, over: 0, fixed: 0, perKm: 0.012 },
-    walk:  { icon: '🚶', name: 'Walking', speed: 4.5, over: 0, fixed: 0, perKm: 0.03 },
+    plane: { icon: '✈️', name: 'Flight', color: '#F5B544', speed: 820, over: 1.6, fixed: 55, perKm: 0.075 },
+    train: { icon: '🚆', name: 'Train', color: '#39C6B0', speed: 150, over: 0.5, fixed: 12, perKm: 0.09 },
+    bus:   { icon: '🚌', name: 'Bus', color: '#8FB4FF',   speed: 72,  over: 0.4, fixed: 6,  perKm: 0.045 },
+    ferry: { icon: '🚢', name: 'Ferry', color: '#7BE0FF', speed: 38,  over: 1.2, fixed: 20, perKm: 0.08 },
+    car:   { icon: '🚗', name: 'Car', color: '#FF8C6B',   speed: 85,  over: 0.2, fixed: 40, perKm: 0.13 },
+    bike:  { icon: '🚲', name: 'Bicycle', color: '#C9D6C0', speed: 18, over: 0, fixed: 0, perKm: 0.012 },
+    walk:  { icon: '🚶', name: 'Walking', color: '#C9D6C0', speed: 4.5, over: 0, fixed: 0, perKm: 0.03 },
   };
 
   /* Legs available between a and b on a given day. Deterministic. */
+  /* modelled flight for a pair (before calibration) */
+  function modelPlane(a, b, d, r) {
+    const jitter = () => 0.8 + r() * 0.45, m = MODES.plane;
+    const hubScore = a.hub + b.hub + r() * 3;
+    const direct = d < 3500 ? hubScore >= 2.5 : hubScore >= 4.2;
+    if (direct) {
+      const cheapHub = (a.hub + b.hub) >= 4 ? 0.82 : 1;
+      return { cost: (m.fixed + d * m.perKm * (d > 4000 ? 0.75 : 1)) * jitter() * cheapHub, hours: m.over + d / m.speed + (d > 5000 ? 0.6 : 0), note: 'direct' };
+    }
+    if (d > 900 && hubScore >= 1.8) return { cost: (m.fixed + d * m.perKm) * jitter() * 1.05, hours: m.over + d / m.speed + 2.2 + r() * 1.5, note: '1 stop' };
+    return null;
+  }
+  /* how far the day's live fares sit from the model: median ratio, applied to modelled flights so both worlds agree */
+  const CAL = {};
+  function calibration(seed) {
+    if (CAL[seed]) return CAL[seed];
+    const L = window.TRAVERSE_LIVE, rc = [], rh = [];
+    if (L && L.date === dayKey(parseInt(seed.slice(1), 10))) {
+      for (const k in L.routes) {
+        const [x, y] = k.split('-'); const a = byId[x], b = byId[y]; if (!a || !b) continue;
+        const d = km(a, b), r = rng(hash(seed + '|' + [a.id, b.id].sort().join('-')));
+        const pl = modelPlane(a, b, d, r); if (!pl) continue;
+        rc.push(L.routes[k].cost / pl.cost); rh.push(L.routes[k].hours / pl.hours);
+      }
+    }
+    const med = v => { if (!v.length) return 1; v = v.slice().sort((p, q) => p - q); return v[Math.floor(v.length / 2)]; };
+    return (CAL[seed] = { cost: med(rc), hours: med(rh) });
+  }
   const BLOCKED = {}; // seed -> 'x-y' pair with no direct flight (keeps every day a routing puzzle)
   function legs(a, b, daySeed) {
     if (a.id === b.id) return [];
@@ -62,18 +93,14 @@
     const land = sameLand(a, b) && !crossesMed(a, b);
     const add = (m, cost, hours, note) => out.push({ mode: m, icon: MODES[m].icon, name: MODES[m].name, cost: Math.round(cost), hours: Math.round(hours * 12) / 12, note });
 
-    // plane: needs some distance; direct availability depends on hubs
-    if (d > 220 && !noFly) {
-      const hubScore = a.hub + b.hub + r() * 3;
-      const direct = d < 3500 ? hubScore >= 2.5 : hubScore >= 4.2;
-      if (direct) {
-        const m = MODES.plane;
-        const cheapHub = (a.hub + b.hub) >= 4 ? 0.82 : 1;
-        add('plane', (m.fixed + d * m.perKm * (d > 4000 ? 0.75 : 1)) * jitter() * cheapHub, m.over + d / m.speed + (d > 5000 ? 0.6 : 0), 'direct');
-      } else if (d > 900 && hubScore >= 1.8) {
-        const m = MODES.plane;
-        add('plane', (m.fixed + d * m.perKm) * jitter() * 1.05, m.over + d / m.speed + 2.2 + r() * 1.5, '1 stop');
-      }
+    // live averaged fare for this pair (daily snapshot), else modelled and calibrated to the day's live fares
+    const L = window.TRAVERSE_LIVE, lk = a.id + '-' + b.id;
+    const live = L && L.date === dayKey(parseInt(daySeed.slice(1), 10)) && L.routes[lk];
+    if (live && !noFly) {
+      out.push({ mode: 'plane', icon: MODES.plane.icon, name: 'Flight', cost: live.cost, hours: live.hours, note: 'avg of ' + live.n + ' live fares', live: true, nonstop: live.nonstop, min: live.min });
+    } else if (d > 220 && !noFly) {
+      const pl = modelPlane(a, b, d, r), cal = calibration(daySeed);
+      if (pl) add('plane', pl.cost * cal.cost, pl.hours * cal.hours, pl.note);
     }
     if (land) {
       if (a.rail && b.rail && d < 1400) {
@@ -92,8 +119,7 @@
   }
 
   /* ---------- daily challenge ---------- */
-  const dayNumber = (t = Date.now()) => Math.floor((t - EPOCH) / DAY_MS) + 1;
-  const dayKey = n => new Date(EPOCH + (n - 1) * DAY_MS).toISOString().slice(0, 10);
+
   function challenge(n) {
     const r = rng(hash('traverse-day-' + n));
     let a, b, tries = 0;
@@ -165,5 +191,5 @@
   const secsF = s => s < 60 ? Math.round(s) + 's' : Math.floor(s / 60) + 'm ' + Math.round(s % 60) + 's';
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-  window.Traverse = { C, byId, km, legs, MODES, dayNumber, dayKey, challenge, benchmarks, score, field, rankOf, load, save, money, dur, secsF, esc, rng, hash };
+  window.Traverse = { live: () => window.TRAVERSE_LIVE || null, C, byId, km, legs, MODES, dayNumber, dayKey, challenge, benchmarks, score, field, rankOf, load, save, money, dur, secsF, esc, rng, hash };
 })();
