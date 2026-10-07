@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Traverse – Daily Travel Strategy – GeoAtlas</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2713%27 fill=%27%231b64c4%27 stroke=%27%2322e07a%27 stroke-width=%273%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/traverse.css">
+</head><body>
+<main class="wrap tv">
+
+  <section class="tv-top">
+    <div class="tv-title">
+      <span class="eyebrow">🧭 Daily travel strategy</span>
+      <h1><span class="grad">Traverse</span> <small id="tv-day" class="muted"></small></h1>
+      <p class="muted">Same start, same destination, for everyone on Earth today. Find the best journey: cheap, fast, and decided quickly.</p>
+    </div>
+    <div class="tv-challenge card" id="tv-challenge"></div>
+  </section>
+
+  <section id="tv-intro" class="card tv-intro">
+    <h2>How it works</h2>
+    <ol>
+      <li><b>Build a route</b> from the start city to the destination. Add stopovers if they make the trip cheaper or faster.</li>
+      <li><b>Pick a transport</b> for every leg: ✈️ flight, 🚆 train, 🚌 bus, 🚢 ferry, 🚗 car, 🚲 bike, 🚶 walk. Prices and times differ every day.</li>
+      <li><b>Submit once.</b> Your Traverse Score weighs money spent, hours travelled and how fast you decided. The clock starts when you press <i>Start</i>.</li>
+    </ol>
+    <div class="tv-intro-actions">
+      <button class="btn big" id="tv-start">▶ Start today's Traverse</button>
+      <span class="muted" id="tv-intro-note"></span>
+    </div>
+  </section>
+
+  <section id="tv-game" class="tv-game" hidden>
+    <div class="tv-map card">
+      <div class="tv-maphead">
+        <span class="pill" id="tv-timer">⚡ 0s</span>
+        <span class="pill" id="tv-cost">💰 $0</span>
+        <span class="pill" id="tv-time">⏱️ 0h</span>
+        <span class="pill est" id="tv-est">est. —</span>
+      </div>
+      <div class="mapbox tvbox">
+        <svg id="tv-svg" viewBox="0 0 960 500" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="zoom"><button id="tv-zin" aria-label="Zoom in">+</button><button id="tv-zout" aria-label="Zoom out">−</button><button id="tv-zreset" aria-label="Reset view">⟲</button></div>
+      </div>
+      <p class="muted tiny">Tap a city on the map or search below to add it as the next stop. Drag to pan, scroll to zoom.</p>
+    </div>
+
+    <div class="tv-side">
+      <div class="card tv-route">
+        <h3>Your route</h3>
+        <ol id="tv-legs" class="tv-legs"></ol>
+        <div id="tv-picker" class="tv-picker"></div>
+        <div class="tv-actions">
+          <button class="btn ghost small" id="tv-undo">↶ Undo last leg</button>
+          <button class="btn ghost small" id="tv-clear">Clear</button>
+          <button class="btn" id="tv-submit" disabled>Submit journey</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tv-result" class="card tv-result" hidden></section>
+  <section id="tv-board" class="card tv-board" hidden></section>
+</main>
+<footer class="site-footer"></footer>
+<script src="vendor/d3.min.js"></script><script src="vendor/topojson-client.min.js"></script>
+<script src="data/world.js"></script><script src="data/countries.js"></script><script src="data/traverse-cities.js"></script>
+<script src="js/common.js"></script><script src="js/traverse.js"></script><script src="js/traverse-ui.js"></script>
+</body></html>
