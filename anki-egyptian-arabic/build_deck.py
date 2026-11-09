@@ -1,0 +1,148 @@
+"""Build an Anki deck of beginner Egyptian Arabic words and phrases.
+
+Romanization uses "Franco-Arabic", the Latin spelling Egyptians use when texting:
+  2 = glottal stop (hamza, and the Cairene "q")   3 = ع (deep throat sound)
+  7 = ح (breathy h)   kh = خ (like German "Bach")   gh = غ (French r)
+  g = ج (Cairo says a hard g, not j)   Doubled letters are held longer.
+Run: python3 build_deck.py  ->  writes egyptian_arabic_basics.apkg
+"""
+import csv, os, genanki
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+model = genanki.Model(
+    1736104201, "Egyptian Arabic (2-way)",
+    fields=[{"name": "English"}, {"name": "Arabic"}, {"name": "Franco"}, {"name": "Notes"}],
+    templates=[
+        {"name": "English -> Arabic",
+         "qfmt": '<div class="en">{{English}}</div>',
+         "afmt": '{{FrontSide}}<hr id="answer"><div class="ar">{{Arabic}}</div>'
+                 '<div class="fr">{{Franco}}</div>{{#Notes}}<div class="nt">{{Notes}}</div>{{/Notes}}'},
+        {"name": "Arabic -> English",
+         "qfmt": '<div class="ar">{{Arabic}}</div><div class="fr">{{Franco}}</div>',
+         "afmt": '{{FrontSide}}<hr id="answer"><div class="en">{{English}}</div>'
+                 '{{#Notes}}<div class="nt">{{Notes}}</div>{{/Notes}}'},
+    ],
+    css=""".card{font-family:sans-serif;text-align:center;font-size:22px}
+.ar{font-size:40px;direction:rtl;margin:10px 0}.fr{font-size:24px;color:#2a7}
+.en{font-size:26px}.nt{font-size:16px;color:#888;margin-top:14px}""",
+)
+
+# (English, Arabic, Franco, Notes, tag)
+CARDS = [
+    # Greetings and politeness
+    ("Hello", "أهلاً", "ahlan", "Reply: أهلاً بيك (ahlan bik, to a man) / بيكي (biki, to a woman).", "greetings"),
+    ("Peace be upon you (standard greeting)", "السلام عليكم", "es-salamu 3aleikum", "Reply: وعليكم السلام (we 3aleikum es-salam).", "greetings"),
+    ("Good morning", "صباح الخير", "saba7 el-kheir", "Reply: صباح النور (saba7 en-nur), 'morning of light'.", "greetings"),
+    ("Good evening", "مساء الخير", "masa2 el-kheir", "Reply: مساء النور (masa2 en-nur).", "greetings"),
+    ("How are you? (to a man)", "إزيك؟", "izzayyak?", "To a woman: izzayyik?", "greetings"),
+    ("How are you? (to a woman)", "إزيك؟", "izzayyik?", "Same spelling as the masculine; only the vowel differs.", "greetings"),
+    ("Thank God (I'm fine)", "الحمد لله", "el-7amdu lillah", "The most common answer to 'how are you?'.", "greetings"),
+    ("I'm good (man speaking)", "أنا كويس", "ana kwayyis", "Woman: ana kwayyisa.", "greetings"),
+    ("Thank you", "شكراً", "shukran", "", "greetings"),
+    ("You're welcome", "العفو", "el-3afw", "", "greetings"),
+    ("Please (to a man)", "من فضلك", "min fadlak", "To a woman: min fadlik.", "greetings"),
+    ("Sorry (man speaking)", "آسف", "asif", "Woman: asfa.", "greetings"),
+    ("Excuse me / pardon", "لو سمحت", "law sama7t", "Use to get attention or ask politely. To a woman: law sama7ti.", "greetings"),
+    ("Goodbye", "مع السلامة", "ma3a s-salama", "Literally 'with safety'.", "greetings"),
+    ("Nice to meet you", "تشرفنا", "itsharrafna", "", "greetings"),
+    ("Welcome", "أهلاً وسهلاً", "ahlan wa sahlan", "", "greetings"),
+
+    # Introductions and basics
+    ("What's your name? (to a man)", "اسمك إيه؟", "ismak eh?", "To a woman: ismik eh?", "basics"),
+    ("My name is ...", "اسمي ...", "ismi ...", "", "basics"),
+    ("Yes", "أيوه", "aywa", "", "basics"),
+    ("No", "لأ", "la2", "", "basics"),
+    ("OK / alright", "ماشي", "mashi", "Very common. Also: طيب (tayyib).", "basics"),
+    ("I don't understand (man speaking)", "مش فاهم", "mish fahim", "Woman: mish fahma.", "basics"),
+    ("Do you speak English? (to a man)", "بتتكلم إنجليزي؟", "bitetkallim ingilizi?", "To a woman: bitetkallimi ingilizi?", "basics"),
+    ("Slowly, please", "براحة لو سمحت", "bi-ra7a law sama7t", "", "basics"),
+    ("I want ... (man speaking)", "أنا عايز ...", "ana 3ayez ...", "Woman: ana 3ayza.", "basics"),
+    ("There is / Is there ...?", "فيه", "fih", "fih maya? = Is there water?", "basics"),
+    ("There isn't / none", "مفيش", "mafish", "", "basics"),
+    ("No problem", "مفيش مشكلة", "mafish mushkila", "", "basics"),
+    ("God willing", "إن شاء الله", "in sha2 allah", "Said about anything in the future.", "basics"),
+    ("Let's go / come on", "يلا", "yalla", "", "basics"),
+    ("Of course", "طبعاً", "tab3an", "", "basics"),
+    ("Really? / Seriously?", "بجد؟", "bi-gad?", "", "basics"),
+    ("Enough / that's it", "خلاص", "khalas", "Also 'done' or 'finished'.", "basics"),
+
+    # Question words
+    ("What?", "إيه؟", "eh?", "Goes at the end: ismak eh? = your name what?", "questions"),
+    ("Where?", "فين؟", "fein?", "el-7ammam fein? = Where's the bathroom?", "questions"),
+    ("When?", "إمتى؟", "imta?", "", "questions"),
+    ("Why?", "ليه؟", "leih?", "", "questions"),
+    ("Who?", "مين؟", "min?", "", "questions"),
+    ("How?", "إزاي؟", "izzay?", "", "questions"),
+    ("How much? (price)", "بكام؟", "bikam?", "Point at something and say: da bikam? = How much is this?", "questions"),
+    ("How many?", "كام؟", "kam?", "", "questions"),
+
+    # Pronouns
+    ("I", "أنا", "ana", "", "pronouns"),
+    ("You (man)", "إنت", "inta", "", "pronouns"),
+    ("You (woman)", "إنتي", "inti", "", "pronouns"),
+    ("He", "هو", "huwwa", "", "pronouns"),
+    ("She", "هي", "hiyya", "", "pronouns"),
+    ("We", "إحنا", "i7na", "", "pronouns"),
+    ("You (plural)", "إنتو", "intu", "", "pronouns"),
+    ("They", "هما", "humma", "", "pronouns"),
+    ("This (masculine)", "ده", "da", "Feminine: دي (di).", "pronouns"),
+
+    # Numbers
+    ("Zero", "صفر", "sifr", "", "numbers"),
+    ("One", "واحد", "wa7id", "", "numbers"),
+    ("Two", "اتنين", "itnein", "", "numbers"),
+    ("Three", "تلاتة", "talata", "", "numbers"),
+    ("Four", "أربعة", "arba3a", "", "numbers"),
+    ("Five", "خمسة", "khamsa", "", "numbers"),
+    ("Six", "ستة", "sitta", "", "numbers"),
+    ("Seven", "سبعة", "sab3a", "", "numbers"),
+    ("Eight", "تمانية", "tamanya", "", "numbers"),
+    ("Nine", "تسعة", "tis3a", "", "numbers"),
+    ("Ten", "عشرة", "3ashara", "", "numbers"),
+
+    # Time
+    ("Today", "النهارده", "en-naharda", "", "time"),
+    ("Tomorrow", "بكرة", "bukra", "", "time"),
+    ("Yesterday", "امبارح", "imbare7", "", "time"),
+    ("Now", "دلوقتي", "dilwa2ti", "", "time"),
+    ("Later", "بعدين", "ba3dein", "", "time"),
+
+    # Everyday words
+    ("Water", "مية", "mayya", "", "words"),
+    ("Bread", "عيش", "3eish", "Also means 'life', since bread is life.", "words"),
+    ("Food", "أكل", "akl", "", "words"),
+    ("Tea", "شاي", "shai", "", "words"),
+    ("Coffee", "قهوة", "2ahwa", "Also means a café.", "words"),
+    ("Money", "فلوس", "filus", "", "words"),
+    ("House / home", "بيت", "beit", "", "words"),
+    ("Car", "عربية", "3arabiyya", "", "words"),
+    ("Street", "شارع", "share3", "", "words"),
+    ("Bathroom", "حمام", "7ammam", "", "words"),
+    ("Friend (male)", "صاحب", "sa7eb", "Female: صاحبة (sa7ba).", "words"),
+
+    # Adjectives
+    ("Good / fine", "كويس", "kwayyis", "Feminine: kwayyisa.", "adjectives"),
+    ("Bad / ugly", "وحش", "wi7ish", "Feminine: wi7sha.", "adjectives"),
+    ("Big", "كبير", "kbir", "Feminine: kbira.", "adjectives"),
+    ("Small", "صغير", "sughayyar", "Feminine: sughayyara.", "adjectives"),
+    ("Hot (weather)", "حر", "7arr", "", "adjectives"),
+    ("Cold", "برد", "bard", "", "adjectives"),
+    ("A lot / many", "كتير", "ktir", "", "adjectives"),
+    ("A little", "شوية", "shwayya", "", "adjectives"),
+    ("Beautiful (masculine)", "حلو", "7elw", "Feminine: حلوة (7elwa). Also 'sweet' or 'nice'.", "adjectives"),
+    ("Expensive", "غالي", "ghali", "Haggling: da ghali awi! = That's very expensive!", "adjectives"),
+    ("Cheap", "رخيص", "rakhis", "", "adjectives"),
+    ("Very", "أوي", "awi", "Goes after the word: kwayyis awi = very good.", "adjectives"),
+]
+
+deck = genanki.Deck(1736104202, "Egyptian Arabic::01 Basics")
+for en, ar, fr, nt, tag in CARDS:
+    deck.add_note(genanki.Note(model=model, fields=[en, ar, fr, nt], tags=["egyptian_arabic", tag],
+                               guid=genanki.guid_for("egy", en)))
+
+out = os.path.join(HERE, "egyptian_arabic_basics.apkg")
+genanki.Package(deck).write_to_file(out)
+with open(os.path.join(HERE, "egyptian_arabic_basics.csv"), "w", newline="", encoding="utf-8") as f:
+    w = csv.writer(f); w.writerow(["English", "Arabic", "Franco", "Notes", "Tag"]); w.writerows(CARDS)
+print(f"{len(CARDS)} notes, {2*len(CARDS)} cards -> {out}")
